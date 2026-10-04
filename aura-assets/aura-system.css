@@ -163,3 +163,7 @@ main,.min-h-screen,[data-sidebar-provider],[data-sidebar-wrapper]{background:tra
 @media(prefers-reduced-motion:reduce){
   .aura-floating-icon{animation:none!important}
 }
+
+/* Fine tune: lighter login backdrop and full viewport coverage */
+.aura-auth{min-height:100vh!important;min-height:100dvh!important;padding-bottom:0!important;margin-bottom:0!important}
+.aura-auth .absolute.inset-0.backdrop-blur-md{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;height:100dvh!important;background:rgba(5,7,10,.055)!important;backdrop-filter:blur(2px)!important;-webkit-backdrop-filter:blur(2px)!important}
