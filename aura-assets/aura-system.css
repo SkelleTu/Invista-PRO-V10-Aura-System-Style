@@ -1,1 +1,118 @@
 :root{--aura-cyan:#00e5ff;--aura-purple:#9333ea;--aura-bg:#05070a}html,body,#root{background:transparent!important}body{font-family:"Segoe UI",Inter,Arial,sans-serif!important;color:#f7fafc!important}body::before{display:none!important}.aura-visual-layer{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;background:#05070a}.aura-grid-layer{position:absolute;inset:0;background:linear-gradient(rgba(0,229,255,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.12) 1px,transparent 1px),radial-gradient(ellipse 80% 50% at 50% 0%,rgba(0,229,255,.12),transparent 50%),radial-gradient(ellipse 60% 40% at 100% 50%,rgba(147,51,234,.09),transparent 50%),radial-gradient(ellipse 60% 40% at 0% 100%,rgba(0,229,255,.08),transparent 50%);background-size:40px 40px,40px 40px,100% 100%,100% 100%,100% 100%;animation:auraPulse 4s ease-in-out infinite}.aura-icons-layer{position:absolute;inset:0}.aura-floating-icon{position:absolute;color:var(--aura-cyan);filter:drop-shadow(0 0 8px rgba(0,229,255,.35));animation:auraFloat 18s ease-in-out infinite}.aura-circuit-layer{position:absolute;inset:0;opacity:.018;background-image:linear-gradient(90deg,transparent 49%,rgba(0,229,255,.8) 50%,transparent 51%),linear-gradient(transparent 49%,rgba(0,229,255,.8) 50%,transparent 51%);background-size:100px 100px}.aura-scanlines-layer{position:absolute;inset:0;opacity:.018;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,229,255,.6) 3px,rgba(0,229,255,.6) 5px);animation:auraScan 7s linear infinite}@keyframes auraFloat{0%,100%{transform:translate(0,0)}25%{transform:translate(10px,-20px)}50%{transform:translate(-10px,-10px)}75%{transform:translate(5px,-30px)}}@keyframes auraRotate{from{transform:rotate(0)}to{transform:rotate(360deg)}}@keyframes auraPulse{0%,100%{opacity:.85}50%{opacity:1}}@keyframes auraScan{from{background-position:0 0}to{background-position:0 100vh}}#root>*{position:relative;z-index:1}button:not(.ghost):not(.outline){box-shadow:0 0 10px rgba(0,229,255,.18);transition:box-shadow .3s,transform .3s}button:not(.ghost):not(.outline):hover{box-shadow:0 0 20px rgba(0,229,255,.45);transform:translateY(-1px)}button svg,[role=button] svg{color:var(--aura-cyan)!important;filter:drop-shadow(0 0 4px rgba(0,229,255,.75)) drop-shadow(0 0 9px rgba(0,229,255,.35))}input,textarea,select{background:rgba(0,0,0,.32)!important;border-color:rgba(0,229,255,.22)!important;color:#fff!important}input:focus,textarea:focus,select:focus{border-color:rgba(0,229,255,.7)!important;box-shadow:0 0 0 2px rgba(0,229,255,.1),0 0 18px rgba(0,229,255,.14)!important}.bg-background{background:transparent!important}.bg-card{background:rgba(8,12,18,.82)!important}.border-border{border-color:rgba(0,229,255,.2)!important}.text-primary,.text-cyan-400,.text-cyan-300{color:var(--aura-cyan)!important}.bg-primary{background:rgba(0,184,212,.82)!important}.aura-auth{background:transparent!important;position:relative;overflow:hidden}.aura-auth .absolute.inset-0.backdrop-blur-md{background:rgba(5,7,10,.35)!important;backdrop-filter:blur(7px)!important}.aura-auth .grid>div:first-child h1{color:#fff;text-shadow:0 0 10px rgba(0,229,255,.4),0 0 25px rgba(0,229,255,.18);letter-spacing:.04em}.aura-auth .grid>div:first-child img{filter:drop-shadow(0 0 15px rgba(0,229,255,.45));border:1px solid rgba(0,229,255,.3)}.aura-auth .grid>div:first-child .bg-gradient-to-br{background:rgba(255,255,255,.045)!important;border:1px solid rgba(0,229,255,.18)!important;backdrop-filter:blur(18px)}.aura-auth .grid>div:last-child{background:rgba(255,255,255,.045)!important;border:1px solid rgba(255,255,255,.13)!important;backdrop-filter:blur(18px);box-shadow:0 0 45px rgba(0,229,255,.08),0 24px 80px rgba(0,0,0,.45)!important;border-radius:20px!important}.aura-auth [role=tablist]{background:rgba(0,0,0,.28)!important;border:1px solid rgba(0,229,255,.14)!important}.aura-auth [role=tab][data-state=active]{background:rgba(0,229,255,.16)!important;color:#fff!important;box-shadow:0 0 18px rgba(0,229,255,.16)}.aura-auth [role=tab]{color:rgba(255,255,255,.6)}.aura-auth label{color:rgba(255,255,255,.8)!important}.aura-auth .bg-amber-50,.aura-auth .bg-blue-50{background:rgba(0,229,255,.055)!important;border-color:rgba(0,229,255,.18)!important}.aura-auth .text-amber-800,.aura-auth .text-blue-800{color:rgba(255,255,255,.75)!important}.aura-auth .bg-muted\/30{background:rgba(255,255,255,.035)!important;border-color:rgba(0,229,255,.16)!important}.aura-auth button[type=submit]{background:linear-gradient(135deg,rgba(0,229,255,.38),rgba(0,125,150,.7))!important;border:1px solid rgba(0,229,255,.5)!important;color:#fff!important;text-transform:uppercase;letter-spacing:.12em;font-weight:800;box-shadow:0 0 20px rgba(0,229,255,.2)}.aura-auth button[type=submit]:hover{box-shadow:0 0 30px rgba(0,229,255,.42)}.aura-auth .text-muted-foreground{color:rgba(255,255,255,.55)!important}.aura-auth .text-card-foreground{color:#fff!important}@media(max-width:768px){.aura-grid-layer{background-size:50px 50px,50px 50px,100% 100%,100% 100%,100% 100%}.aura-auth .grid>div:first-child{display:none}.aura-auth .grid{max-width:430px}}
+/* AURA GLOBAL SKIN: presentation only, preserving application structure and behavior */
+html,body,#root{min-height:100%;background:#05070a!important;color:#f7fafc!important}
+body{background:#05070a!important;overflow-x:hidden}
+#root{position:relative;isolation:isolate}
+.aura-visual-layer{z-index:0!important}
+#root>*{z-index:1}
+
+/* Replace legacy light surfaces with Aura glass surfaces */
+.bg-white,.bg-gray-50,.bg-gray-100,.bg-gray-200,.bg-slate-50,.bg-slate-100,.bg-zinc-50,.bg-neutral-50{
+  background:rgba(8,12,18,.88)!important;color:#f7fafc!important
+}
+.bg-white\/5,.bg-white\/10,.bg-white\/20{
+  background:rgba(255,255,255,.045)!important
+}
+[class*="bg-white/"],[class*="bg-gray-"],[class*="bg-slate-"],[class*="bg-zinc-"],[class*="bg-neutral-"]{
+  border-color:rgba(0,229,255,.14)
+}
+[class*="bg-gradient-to-"]{
+  background-color:rgba(8,12,18,.82)!important
+}
+.bg-card,.bg-popover,.bg-muted,.bg-secondary,.bg-accent{
+  background:rgba(8,12,18,.9)!important;color:#f7fafc!important
+}
+[class*="border-white"],[class*="border-gray"],[class*="border-slate"],[class*="border-zinc"]{
+  border-color:rgba(0,229,255,.16)!important
+}
+
+/* Typography and semantic colors */
+.text-black,.text-gray-900,.text-gray-800,.text-slate-900,.text-zinc-900,.text-neutral-900{color:#fff!important}
+.text-gray-700,.text-gray-600,.text-slate-700,.text-slate-600,.text-zinc-700,.text-zinc-600,.text-neutral-700,.text-neutral-600{color:rgba(255,255,255,.72)!important}
+.text-gray-500,.text-gray-400,.text-slate-500,.text-slate-400,.text-zinc-500,.text-zinc-400,.text-neutral-500,.text-neutral-400{color:rgba(255,255,255,.58)!important}
+.text-white{color:#fff!important}
+.text-primary,.text-cyan-300,.text-cyan-400,.text-cyan-500{color:#00e5ff!important}
+.text-purple-300,.text-purple-400,.text-purple-500{color:#b56cff!important}
+
+/* Aura cards and panels */
+[class*="rounded"][class*="shadow"],.card,.glass-panel,.panel{
+  --tw-shadow-color:rgba(0,229,255,.08);
+}
+.shadow,.shadow-sm,.shadow-md,.shadow-lg,.shadow-xl,.shadow-2xl{
+  box-shadow:0 10px 40px rgba(0,0,0,.35),0 0 22px rgba(0,229,255,.06)!important
+}
+
+/* Controls */
+input,textarea,select{
+  background:rgba(3,7,12,.86)!important;
+  color:#fff!important;
+  caret-color:#00e5ff!important;
+  border-color:rgba(0,229,255,.24)!important;
+}
+input::placeholder,textarea::placeholder{color:rgba(255,255,255,.42)!important}
+input:disabled,textarea:disabled,select:disabled{opacity:.55!important}
+button{
+  color:#f7fafc!important;
+}
+button.bg-white,button.bg-gray-50,button.bg-gray-100,button.bg-slate-50,button.bg-zinc-50{
+  background:rgba(8,12,18,.92)!important;color:#fff!important
+}
+button.bg-primary,.bg-primary{
+  background:linear-gradient(135deg,rgba(0,229,255,.28),rgba(0,125,150,.72))!important;
+  color:#fff!important;border-color:rgba(0,229,255,.48)!important
+}
+button:hover{filter:brightness(1.08)}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
+  outline:2px solid rgba(0,229,255,.65)!important;
+  outline-offset:2px!important;
+}
+
+/* Tables, dropdowns, dialogs, sheets and popovers */
+table{color:#f7fafc!important}
+thead{background:rgba(0,229,255,.055)!important}
+tr{border-color:rgba(0,229,255,.12)!important}
+tr:hover{background:rgba(0,229,255,.035)!important}
+[role="dialog"],[data-radix-popper-content-wrapper]>div,[data-radix-menu-content],[data-radix-select-content]{
+  background:rgba(5,7,10,.96)!important;
+  color:#fff!important;
+  border-color:rgba(0,229,255,.24)!important;
+  box-shadow:0 20px 70px rgba(0,0,0,.65),0 0 30px rgba(0,229,255,.08)!important;
+}
+[role="menuitem"],[role="option"]{color:rgba(255,255,255,.82)!important}
+[role="menuitem"]:hover,[role="option"]:hover{background:rgba(0,229,255,.1)!important;color:#fff!important}
+
+/* Navigation/sidebar */
+nav,aside,[data-sidebar="sidebar"],[data-sidebar="content"]{
+  background:rgba(5,7,10,.86)!important;
+  border-color:rgba(0,229,255,.14)!important;
+}
+a{color:rgba(255,255,255,.76)}
+a:hover{color:#00e5ff}
+
+/* Status / badges */
+.badge,[class*="badge"]{
+  border-color:rgba(0,229,255,.22)!important;
+}
+.bg-green-50,.bg-emerald-50{background:rgba(16,185,129,.10)!important}
+.bg-red-50,.bg-rose-50{background:rgba(239,68,68,.10)!important}
+.bg-yellow-50,.bg-amber-50{background:rgba(245,158,11,.10)!important}
+.text-green-800,.text-emerald-800{color:#6ee7b7!important}
+.text-red-800,.text-rose-800{color:#fca5a5!important}
+.text-yellow-800,.text-amber-800{color:#fcd34d!important}
+
+/* Preserve readable content over Aura effects */
+.aura-visual-layer,.aura-grid-layer,.aura-icons-layer,.aura-circuit-layer,.aura-scanlines-layer{
+  pointer-events:none!important
+}
+main,.min-h-screen,[data-sidebar-provider],[data-sidebar-wrapper]{background:transparent!important}
+
+/* Scrollbars */
+::-webkit-scrollbar{width:7px;height:7px}
+::-webkit-scrollbar-track{background:#05070a}
+::-webkit-scrollbar-thumb{background:rgba(0,229,255,.18);border-radius:999px}
+::-webkit-scrollbar-thumb:hover{background:rgba(0,229,255,.38)}
+
+@media(max-width:768px){
+  .aura-visual-layer{position:fixed!important}
+  [role="dialog"]{max-width:calc(100vw - 24px)!important}
+}
