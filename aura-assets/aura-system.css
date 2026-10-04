@@ -116,3 +116,50 @@ main,.min-h-screen,[data-sidebar-provider],[data-sidebar-wrapper]{background:tra
   .aura-visual-layer{position:fixed!important}
   [role="dialog"]{max-width:calc(100vw - 24px)!important}
 }
+
+/* Animated Aura icon field */
+.aura-visual-layer{
+  position:fixed!important;inset:0!important;z-index:0!important;
+  overflow:hidden!important;background:#05070a!important;
+}
+.aura-icons-layer{
+  position:absolute!important;inset:0!important;z-index:2!important;
+  overflow:hidden!important;
+}
+.aura-floating-icon{
+  position:absolute!important;
+  display:block!important;
+  color:#00e5ff!important;
+  will-change:transform!important;
+  filter:drop-shadow(0 0 7px rgba(0,229,255,.42)) drop-shadow(0 0 16px rgba(0,229,255,.16));
+}
+@keyframes auraDriftA{
+  0%{transform:translate3d(-3vw,1vh,0) rotate(0deg)}
+  20%{transform:translate3d(5vw,-4vh,0) rotate(18deg)}
+  43%{transform:translate3d(10vw,5vh,0) rotate(38deg)}
+  58%{transform:translate3d(3vw,10vh,0) rotate(52deg)}
+  78%{transform:translate3d(-7vw,4vh,0) rotate(72deg)}
+  100%{transform:translate3d(-3vw,1vh,0) rotate(90deg)}
+}
+@keyframes auraDriftB{
+  0%{transform:translate3d(3vw,-2vh,0) rotate(0deg)}
+  24%{transform:translate3d(-6vw,4vh,0) rotate(-22deg)}
+  48%{transform:translate3d(-10vw,-5vh,0) rotate(-44deg)}
+  68%{transform:translate3d(-2vw,-10vh,0) rotate(-61deg)}
+  84%{transform:translate3d(7vw,-3vh,0) rotate(-77deg)}
+  100%{transform:translate3d(3vw,-2vh,0) rotate(-90deg)}
+}
+.aura-auth,.aura-auth>.grid,.aura-auth .grid>div{
+  position:relative;
+}
+.aura-auth:before{
+  content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(circle at 50% 45%,rgba(0,229,255,.035),transparent 48%);
+}
+.aura-auth>*{position:relative;z-index:2}
+.aura-auth .absolute.inset-0.backdrop-blur-md{
+  z-index:1!important;background:rgba(5,7,10,.18)!important;
+}
+@media(prefers-reduced-motion:reduce){
+  .aura-floating-icon{animation:none!important}
+}
