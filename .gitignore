@@ -1,0 +1,70 @@
+node_modules
+dist
+.DS_Store
+server/public
+vite.config.ts.*
+*.tar.gz
+database/
+database-backups/
+
+# Sensitive files - never commit secrets
+invista-pro-secrets.txt
+**/CREDENCIAIS*.txt
+**/DOCUMENT*CREDENCIAIS*.txt
+server/config/password-recovery/*.txt
+attached_assets/*.txt
+SECRETS-ESSENCIAIS.md
+
+# Database files
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Environment files - NUNCA commitar secrets
+.env
+.env.*
+!.env.example
+.env.local
+.env.development
+.env.production
+.env.staging
+
+# Session and cookies
+cookies.txt
+session_cookies.txt
+*.session
+
+# API Keys and secrets (caso alguém crie arquivos com secrets)
+**/secrets.json
+**/secrets.txt
+**/api-keys.txt
+**/credentials.json
+**/*secret*.json
+**/*secret*.txt
+
+# Replit specific
+.replit.nix
+.cache/
+.upm/
+.config/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS files
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.idea/
+.vscode/
+*.sublime-*
+
+# Secrets management
+SECRETS-ESSENCIAIS.md
+COMO-USAR-DATABASE-URL.md
