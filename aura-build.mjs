@@ -217,9 +217,10 @@ if (!s.includes('@import url("./aura-system.css");')) {
   const routesPath = path.join(root, "server/routes.ts");
   let routes = fs.readFileSync(routesPath, "utf8");
   const routeReplacement = [
-    'console.log("🔐 Tentativa de login:", { identifier: req.body.identifier });',
-    'const validatedData = loginSchema.parse(req.body);',
-    'req.body.email = validatedData.identifier;'
+    'const rawIdentifier = String(req.body.identifier ?? req.body.email ?? "").trim();',
+    'const validatedData = loginSchema.parse({ identifier: rawIdentifier, password: req.body.password });',
+    'req.body.identifier = validatedData.identifier;',
+    'console.log("🔐 Tentativa de login:", { identifier: validatedData.identifier });'
   ].join("\n      ");
   routes = routes.replace(
     /console\.log\('🔐 Tentativa de login:', \{ email: req\.body\.email \}\);\s*const validatedData = loginSchema\.parse\(req\.body\);/,
