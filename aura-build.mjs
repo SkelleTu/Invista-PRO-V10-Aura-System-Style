@@ -411,7 +411,23 @@ if (!s.includes('@import url("./aura-system.css");')) {
       const bytes = fs.readFileSync(absolute);
       const hash = crypto.createHash("sha256").update(bytes).digest("hex");
       const meta = classify(relative);
-      entries.push({ path: relative, size: bytes.length, sha256: hash, ...meta });
+      const textContent = meta.inspectable && bytes.length <= 5_000_000 ? bytes.toString("utf8") : "";
+      const count = (pattern) => (textContent.match(pattern) || []).length;
+      const analysis = meta.inspectable ? {
+        lines: textContent ? textContent.split(/\\r?\\n/).length : 0,
+        imports: count(/^\\s*import\\b/gm),
+        exports: count(/^\\s*export\\b/gm),
+        networkCalls: count(/\\bfetch\\s*\\(/g),
+        timers: count(/\\b(setInterval|setTimeout|setImmediate)\\s*\\(/g),
+        websocketRefs: count(/\\b(WebSocket|WebSocketServer)\\b/g),
+        processHandlers: count(/\\bprocess\\.on\\s*\\(/g),
+        routeDefinitions: count(/\\b(app|router)\\.(get|post|put|patch|delete|use)\\s*\\(/g),
+        errorLogging: count(/\\bconsole\\.(error|warn)\\s*\\(/g),
+        throws: count(/\\bthrow\\s+new\\b/g),
+        todos: count(/\\b(TODO|FIXME|HACK)\\b/gi),
+        credentialLikeLiterals: count(/(?:password|secret|token|api[_-]?key|private[_-]?key)\\s*[:=]\\s*["'`][^"'`]{4,}/gi),
+      } : null;
+      entries.push({ path: relative, size: bytes.length, sha256: hash, ...meta, analysis });
     }
   };
   walk(root);
@@ -420,6 +436,7 @@ if (!s.includes('@import url("./aura-system.css");')) {
     generatedAt: new Date().toISOString(),
     root: "canonical-invista-source-plus-aura-build-assets",
     totalFiles: entries.length,
+    analyzedFiles: entries.filter(x => x.inspectable).length,
     files: entries
   }));
   console.log("🔎 [FORENSIC] Manifesto ponta a ponta gerado:", entries.length, "arquivos");
