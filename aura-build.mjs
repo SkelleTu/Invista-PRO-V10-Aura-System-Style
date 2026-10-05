@@ -82,7 +82,7 @@ const loggerSource = [
   '  console.log(formattedTime + " [" + source + "] " + message);',
   '}',
   ''
-].join("\\n");
+].join(String.fromCharCode(10));
 fs.writeFileSync(path.join(root, "server/logger.ts"), loggerSource);
 
 const staticServerSource = [
@@ -98,7 +98,7 @@ const staticServerSource = [
   '  app.use(express.static(distPath));',
   '}',
   ''
-].join("\\n");
+].join(String.fromCharCode(10));
 fs.writeFileSync(path.join(root, "server/static-server.ts"), staticServerSource);
 
 const indexPath = path.join(root, "server/index.ts");
