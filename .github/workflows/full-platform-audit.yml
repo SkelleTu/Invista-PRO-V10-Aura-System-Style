@@ -8,7 +8,7 @@ on:
 
 concurrency:
   group: invista-full-platform-audit
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   source-and-build:
@@ -96,15 +96,62 @@ jobs:
             package-lock.json
   production-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
-      - name: Public application smoke
+      - name: Public application smoke with cold-start retry
+        shell: bash
         run: |
-          set -e
-          for u in https://invista-pro-v10-aura-system-style.onrender.com/ https://invista-pro-v10-aura-system-style.onrender.com/health https://invista-pro-v10-aura-system-style.onrender.com/api/status; do
-            echo "=== $u ==="
-            curl -fsS --max-time 30 -D /tmp/headers "$u" -o /tmp/body
-            head -n 20 /tmp/headers
-            head -c 2000 /tmp/body
-            echo
+          set -u
+          base="https://invista-pro-v10-aura-system-style.onrender.com"
+          endpoints=("/health" "/api/status" "/")
+          max_attempts=5
+          sleep_seconds=15
+          failures=0
+
+          check_endpoint() {
+            local path="$1"
+            local attempt
+            local http
+            local curl_rc
+            local url="$base$path"
+
+            for attempt in $(seq 1 "$max_attempts"); do
+              echo "=== $url | attempt $attempt/$max_attempts ==="
+              rm -f /tmp/headers /tmp/body /tmp/http_code
+              set +e
+              curl -sS --connect-timeout 15 --max-time 60 -D /tmp/headers -o /tmp/body -w '%{http_code}' "$url" > /tmp/http_code
+              curl_rc=$?
+              set -e
+              http="$(cat /tmp/http_code 2>/dev/null || true)"
+
+              if [ -f /tmp/headers ]; then head -n 20 /tmp/headers; fi
+              if [ -f /tmp/body ]; then head -c 2000 /tmp/body; echo; fi
+              echo "curl_exit=$curl_rc http_status=$http"
+
+              if [ "$curl_rc" -eq 0 ] && [[ "$http" =~ ^2[0-9][0-9]$ ]]; then
+                echo "PASS $path"
+                return 0
+              fi
+
+              if [ "$attempt" -lt "$max_attempts" ]; then
+                echo "Retrying after ${sleep_seconds}s..."
+                sleep "$sleep_seconds"
+              fi
+            done
+
+            echo "FAIL $path after $max_attempts attempts"
+            return 1
+          }
+
+          for endpoint in "${endpoints[@]}"; do
+            if ! check_endpoint "$endpoint"; then
+              failures=$((failures+1))
+            fi
           done
+
+          if [ "$failures" -ne 0 ]; then
+            echo "Production smoke failed for $failures endpoint(s)."
+            exit 1
+          fi
+
+          echo "Production smoke passed for all endpoints."
