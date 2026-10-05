@@ -161,6 +161,88 @@ if (!s.includes('@import url("./aura-system.css");')) {
 
 
 // ─────────────────────────────────────────────────────────────────────────────
+// RENDER OBSERVABILITY HARDENING
+// Replace the legacy /api/status memory snapshot (heap only) with a truthful
+// process + cgroup memory report. The old endpoint made the UI appear to have
+// a fixed 50MB budget, which was not the Render container limit and hid RSS,
+// external memory and the actual cgroup limit.
+// ─────────────────────────────────────────────────────────────────────────────
+{
+  const routesPath = path.join(root, "server/routes.ts");
+  let routes = fs.readFileSync(routesPath, "utf8");
+
+  const legacyMemoryBlock = `memory: {
+        heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB',
+        heapTotal: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) + 'MB'
+      }`;
+
+  const hardenedMemoryBlock = `memory: (() => {
+        const usage = process.memoryUsage();
+        const fsSync = fs;
+        const readCgroup = (file) => {
+          try {
+            const value = fsSync.readFileSync(file, "utf8").trim();
+            if (!value || value === "max") return null;
+            const parsed = Number(value);
+            return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+          } catch (_) {
+            return null;
+          }
+        };
+
+        const cgroupCurrent = readCgroup("/sys/fs/cgroup/memory.current")
+          ?? readCgroup("/sys/fs/cgroup/memory/memory.usage_in_bytes");
+        const cgroupLimit = readCgroup("/sys/fs/cgroup/memory.max")
+          ?? readCgroup("/sys/fs/cgroup/memory/memory.limit_in_bytes");
+
+        const mb = (bytes) => Math.round(bytes / 1024 / 1024 * 100) / 100;
+        const percentage = cgroupCurrent && cgroupLimit
+          ? Math.round((cgroupCurrent / cgroupLimit) * 10000) / 100
+          : null;
+
+        return {
+          rssBytes: usage.rss,
+          rssMB: mb(usage.rss),
+          heapUsedBytes: usage.heapUsed,
+          heapUsedMB: mb(usage.heapUsed),
+          heapTotalBytes: usage.heapTotal,
+          heapTotalMB: mb(usage.heapTotal),
+          externalBytes: usage.external,
+          externalMB: mb(usage.external),
+          arrayBuffersBytes: usage.arrayBuffers,
+          arrayBuffersMB: mb(usage.arrayBuffers),
+          processMemorySource: "node.process.memoryUsage",
+          cgroupCurrentBytes: cgroupCurrent,
+          cgroupCurrentMB: cgroupCurrent ? mb(cgroupCurrent) : null,
+          cgroupLimitBytes: cgroupLimit,
+          cgroupLimitMB: cgroupLimit ? mb(cgroupLimit) : null,
+          cgroupUsedPercent: percentage,
+          limitSource: cgroupLimit ? "linux.cgroup" : "unavailable",
+          measuredAt: new Date().toISOString()
+        };
+      })()`;
+
+  if (routes.includes(legacyMemoryBlock)) {
+    routes = routes.replace(legacyMemoryBlock, hardenedMemoryBlock);
+  }
+
+  // Ensure the status endpoint identifies the actual deployment target instead
+  // of the historical Replit label.
+  routes = routes.replace(
+    `server: 'replit',`,
+    `server: process.env.RENDER === "true" || process.env.RENDER_SERVICE_ID ? "render" : "node",
+      runtime: process.version,`
+  );
+
+  // The memory block needs fs in routes.ts. Add the import only once.
+  if (routes.includes("const fs = await import") === false && !/^import fs from "fs";/m.test(routes)) {
+    routes = `import fs from "fs";\n` + routes;
+  }
+
+  fs.writeFileSync(routesPath, routes);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // AUTH FIX: allow Skyvern/test automation to use the project's username
 // ("SkelleTu") as well as a normal email address.
 {
