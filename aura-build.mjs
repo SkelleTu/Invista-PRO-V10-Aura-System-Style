@@ -186,6 +186,16 @@ if (!s.includes('@import url("./aura-system.css");')) {
 
           let user = await storage.getUserByEmail(loginIdentifier);
 
+          // Development/test login alias used by the Skyvern validation flow.
+          // This maps the human-facing username to the real account email
+          // without adding a username column or duplicating the user record.
+          const configuredLoginUsername = String(process.env.LOGIN_USERNAME || "").trim().toLowerCase();
+          const configuredLoginEmail = String(process.env.LOGIN_EMAIL || "").trim();
+          if (!user && configuredLoginUsername && configuredLoginEmail &&
+              loginIdentifier.toLowerCase() === configuredLoginUsername) {
+            user = await storage.getUserByEmail(configuredLoginEmail);
+          }
+
           // O banco V10 não possui uma coluna username. Para preservar o
           // schema existente, quando o identificador não é email também
           // aceitamos o prefixo do email (ex.: SkelleTu@dominio) e o nome
