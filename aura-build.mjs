@@ -71,6 +71,39 @@ export function serveStatic(app: Express) {
 }
 `;
 fs.writeFileSync(path.join(root, "server/vite.ts"), productionSafeVite);
+
+// Production build must not import Vite at all. Keep the logger/static serving
+// used by production in separate modules so esbuild cannot pull Vite into dist.
+const loggerSource = \`export function log(message: string, source = "express") {
+  const formattedTime = new Date().toLocaleTimeString("en-US", {
+    hour: "numeric", minute: "2-digit", second: "2-digit", hour12: true,
+  });
+  console.log(\`\${formattedTime} [\${source}] \${message}\`);
+}
+\`;
+fs.writeFileSync(path.join(root, "server/logger.ts"), loggerSource);
+
+const staticServerSource = \`import express, { type Express } from "express";
+import fs from "fs";
+import path from "path";
+
+export function serveStatic(app: Express) {
+  const distPath = path.resolve(import.meta.dirname, "public");
+  if (!fs.existsSync(distPath)) {
+    throw new Error(\`Could not find the build directory: \${distPath}, make sure to build the client first\`);
+  }
+  app.use(express.static(distPath));
+}
+\`;
+fs.writeFileSync(path.join(root, "server/static-server.ts"), staticServerSource);
+
+const indexPath = path.join(root, "server/index.ts");
+let indexSource = fs.readFileSync(indexPath, "utf8");
+indexSource = indexSource.replace(
+  'import { setupVite, serveStatic, log } from "./vite";',
+  'import { log } from "./logger";\\nimport { serveStatic } from "./static-server";'
+);
+fs.writeFileSync(indexPath, indexSource);
 const copy = (a, b) => {
   fs.mkdirSync(path.dirname(b), { recursive: true });
   fs.copyFileSync(a, b);
