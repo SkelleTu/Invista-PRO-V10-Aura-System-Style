@@ -181,7 +181,7 @@ if (!s.includes('@import url("./aura-system.css");')) {
   const hardenedMemoryBlock = `memory: (() => {
         const usage = process.memoryUsage();
         const fsSync = fs;
-        const readCgroup = (file) => {
+        const readCgroup = (file: string) => {
           try {
             const value = fsSync.readFileSync(file, "utf8").trim();
             if (!value || value === "max") return null;
@@ -197,7 +197,7 @@ if (!s.includes('@import url("./aura-system.css");')) {
         const cgroupLimit = readCgroup("/sys/fs/cgroup/memory.max")
           ?? readCgroup("/sys/fs/cgroup/memory/memory.limit_in_bytes");
 
-        const mb = (bytes) => Math.round(bytes / 1024 / 1024 * 100) / 100;
+        const mb = (bytes: number) => Math.round(bytes / 1024 / 1024 * 100) / 100;
         const percentage = cgroupCurrent && cgroupLimit
           ? Math.round((cgroupCurrent / cgroupLimit) * 10000) / 100
           : null;
