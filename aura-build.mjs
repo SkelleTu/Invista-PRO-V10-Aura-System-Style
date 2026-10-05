@@ -105,7 +105,7 @@ const indexPath = path.join(root, "server/index.ts");
 let indexSource = fs.readFileSync(indexPath, "utf8");
 indexSource = indexSource.replace(
   'import { setupVite, serveStatic, log } from "./vite";',
-  'import { log } from "./logger";' + String.fromCharCode(10) + 'import { serveStatic } from "./static-server";' + String.fromCharCode(10) + 'const setupVite = async () => {};'
+  'import { log } from "./logger";' + String.fromCharCode(10) + 'import { serveStatic } from "./static-server";' + String.fromCharCode(10) + 'const setupVite = async (_app, _server) => {};'
 );
 fs.writeFileSync(indexPath, indexSource);
 const copy = (a, b) => {
@@ -379,12 +379,7 @@ if (!s.includes('@import url("./aura-system.css");')) {
     '<Eye className="h-4 w-4" />',
     '<Eye className="h-4 w-4" aria-hidden="true" />'
   );
-  if (!authPage.includes('aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}')) {
-    authPage = authPage.replace(
-      'className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"',
-      'className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"\n                          aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}'
-    );
-  }
+
 
   fs.writeFileSync(authPagePath, authPage);
 }
