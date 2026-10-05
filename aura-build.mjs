@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import crypto from "node:crypto";
 
 const root = process.cwd();
 
@@ -385,4 +386,41 @@ if (!s.includes('@import url("./aura-system.css");')) {
   );
 
   fs.writeFileSync(authPagePath, authPage);
+}
+
+
+// END-TO-END FORENSIC MANIFEST
+// Generated inside the canonical source tree before compilation. Every tracked
+// platform file plus Aura build additions is inventoried with size + SHA-256.
+{
+  const ignored = new Set([".git", "node_modules", "dist"]);
+  const entries = [];
+  const classify = (relative) => {
+    const p = relative.toLowerCase();
+    if (/\\.(ts|tsx|js|jsx|mjs|cjs|py|sh|sql|html|css|scss|json|yaml|yml|toml|xml|env|conf|config)$/i.test(p)) return { category: "source-or-config", inspectable: true };
+    if (/\\.(md|txt|pdf)$/i.test(p)) return { category: "documentation", inspectable: true };
+    if (/\\.(png|jpe?g|gif|webp|svg|ico|bmp|wav|mp3|oga|ttf|woff|zip|exe|ex5|hcc|chr|wnd|dat|lic|set|tpl|mq5)$/i.test(p)) return { category: "binary-or-asset", inspectable: false };
+    return { category: "other", inspectable: true };
+  };
+  const walk = (dir) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (ignored.has(entry.name)) continue;
+      const absolute = path.join(dir, entry.name);
+      if (entry.isDirectory()) { walk(absolute); continue; }
+      const relative = path.relative(root, absolute).replaceAll(path.sep, "/");
+      const bytes = fs.readFileSync(absolute);
+      const hash = crypto.createHash("sha256").update(bytes).digest("hex");
+      const meta = classify(relative);
+      entries.push({ path: relative, size: bytes.length, sha256: hash, ...meta });
+    }
+  };
+  walk(root);
+  entries.sort((a, b) => a.path.localeCompare(b.path));
+  fs.writeFileSync(path.join(root, "forensic-manifest.json"), JSON.stringify({
+    generatedAt: new Date().toISOString(),
+    root: "canonical-invista-source-plus-aura-build-assets",
+    totalFiles: entries.length,
+    files: entries
+  }));
+  console.log("🔎 [FORENSIC] Manifesto ponta a ponta gerado:", entries.length, "arquivos");
 }
