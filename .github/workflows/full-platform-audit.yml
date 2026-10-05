@@ -1,0 +1,110 @@
+name: Invista PRO V10 full platform audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - forensic-observability-2026-10-05
+
+concurrency:
+  group: invista-full-platform-audit
+  cancel-in-progress: true
+
+jobs:
+  source-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CANONICAL_INVISTA_COMMIT: 6bd172a1e1acc378df7616ad21abbc280b4b9639
+    steps:
+      - name: Checkout Aura forensic branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Repository identity
+        run: |
+          echo "AURA_SHA=$(git rev-parse HEAD)"
+          echo "AURA_BRANCH=$(git branch --show-current)"
+          git status --short
+          git diff --check
+      - name: Validate package metadata
+        run: |
+          node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('package.json')); const l=JSON.parse(fs.readFileSync('package-lock.json')); if(p.name!==l.name) throw new Error('package name mismatch'); console.log({name:p.name,version:p.version,lockfileVersion:l.lockfileVersion})"
+      - name: Canonical source checkout
+        run: |
+          rm -rf /tmp/invista-source
+          git clone --depth 1 https://github.com/SkelleTu/InvistaPro-V10.git /tmp/invista-source
+          cd /tmp/invista-source
+          git fetch --depth 1 origin "$CANONICAL_INVISTA_COMMIT"
+          git checkout --detach "$CANONICAL_INVISTA_COMMIT"
+          test "$(git rev-parse HEAD)" = "$CANONICAL_INVISTA_COMMIT"
+      - name: Install canonical dependencies
+        working-directory: /tmp/invista-source
+        run: npm install --include=dev --production=false
+      - name: Canonical TypeScript check
+        working-directory: /tmp/invista-source
+        run: npm run check
+      - name: Build Aura from pinned canonical source
+        run: npm run build
+      - name: Verify forensic manifest
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const m=JSON.parse(fs.readFileSync('dist/forensic-manifest.json','utf8'));
+          if(m.canonicalSourceCommit!==process.env.CANONICAL_INVISTA_COMMIT) throw new Error('canonical commit mismatch');
+          if(!Array.isArray(m.files) || m.files.length!==m.totalFiles) throw new Error('manifest file list mismatch');
+          const paths=new Set(m.files.map(x=>x.path));
+          if(paths.size!==m.files.length) throw new Error('duplicate manifest paths');
+          for(const x of m.files) if(typeof x.path!=='string' || !Number.isInteger(x.size) || !/^[a-f0-9]{64}$/i.test(x.sha256)) throw new Error('invalid manifest entry '+x.path);
+          console.log(JSON.stringify({canonical:m.canonicalSourceCommit,totalFiles:m.totalFiles,analyzedFiles:m.analyzedFiles},null,2));
+          NODE
+      - name: Full source inventory and duplicate-content audit
+        run: |
+          python3 - <<'PY'
+          import hashlib, os
+          root='/tmp/invista-source'; files=[]; hashes={}
+          for dp,dn,fn in os.walk(root):
+              dn[:] = [d for d in dn if d not in {'.git','node_modules','dist'}]
+              for f in fn:
+                  p=os.path.join(dp,f); h=hashlib.sha256()
+                  with open(p,'rb') as fh:
+                      for chunk in iter(lambda: fh.read(1024*1024),b''): h.update(chunk)
+                  files.append(os.path.relpath(p,root)); hashes.setdefault(h.hexdigest(),[]).append(os.path.relpath(p,root))
+          dup=[v for v in hashes.values() if len(v)>1]
+          print('inventory_files=',len(files)); print('duplicate_content_groups=',len(dup))
+          for g in dup[:50]: print('DUP',g)
+          PY
+      - name: Restricted asset audit
+        working-directory: /tmp/invista-source
+        run: |
+          if grep -RInE '(_1S|1HZ|BOOM[0-9]+N|CRASH[0-9]+N)' server client shared --exclude-dir=node_modules --exclude-dir=dist; then
+            echo 'Restricted/legacy symbol references detected above.'
+          else
+            echo 'No restricted legacy 1-second/N symbol references detected.'
+          fi
+      - name: Upload audit artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: invista-platform-audit
+          path: |
+            dist/forensic-manifest.json
+            package.json
+            package-lock.json
+  production-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Public application smoke
+        run: |
+          set -e
+          for u in https://invista-pro-v10-aura-system-style.onrender.com/ https://invista-pro-v10-aura-system-style.onrender.com/health https://invista-pro-v10-aura-system-style.onrender.com/api/status; do
+            echo "=== $u ==="
+            curl -fsS --max-time 30 -D /tmp/headers "$u" -o /tmp/body
+            head -n 20 /tmp/headers
+            head -c 2000 /tmp/body
+            echo
+          done
