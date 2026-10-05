@@ -162,100 +162,77 @@ if (!s.includes('@import url("./aura-system.css");')) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AUTH FIX: allow Skyvern/test automation to use the project's username
-// ("SkelleTu") as well as a normal email address. The original V10 frontend
-// used type="email", which triggered native browser validation before the
-// request could ever reach /api/login.
-// ─────────────────────────────────────────────────────────────────────────────
+// ("SkelleTu") as well as a normal email address.
 {
   const schemaPath = path.join(root, "shared/schema.ts");
   let schema = fs.readFileSync(schemaPath, "utf8");
   schema = schema.replace(
     /export const loginSchema = z\.object\(\{\s*email: z\.string\(\)\.email\("Email inválido"\),\s*password: z\.string\(\)\.min\(1, "Senha é obrigatória"\),\s*\}\);/,
-    'export const loginSchema = z.object({\\n  identifier: z.string().trim().min(1, "Email ou usuário é obrigatório"),\\n  password: z.string().min(1, "Senha é obrigatória"),\\n});'
+    'export const loginSchema = z.object({\n  identifier: z.string().trim().min(1, "Email ou usuário é obrigatório"),\n  password: z.string().min(1, "Senha é obrigatória"),\n});'
   );
   fs.writeFileSync(schemaPath, schema);
 
   const authPath = path.join(root, "server/auth.ts");
   let auth = fs.readFileSync(authPath, "utf8");
+  const authReplacement = [
+    'async (identifier, password, done) => {',
+    '  try {',
+    '    const loginIdentifier = String(identifier || "").trim();',
+    '    console.log("🔍 Buscando usuário por email/usuário:", loginIdentifier);',
+    '',
+    '    let user = await storage.getUserByEmail(loginIdentifier);',
+    '',
+    '    const configuredLoginUsername = String(process.env.LOGIN_USERNAME || "").trim().toLowerCase();',
+    '    const configuredLoginEmail = String(process.env.LOGIN_EMAIL || "").trim();',
+    '    if (!user && configuredLoginUsername && configuredLoginEmail && loginIdentifier.toLowerCase() === configuredLoginUsername) {',
+    '      user = await storage.getUserByEmail(configuredLoginEmail);',
+    }',
+    '',
+    '    if (!user && loginIdentifier && !loginIdentifier.includes("@")) {',
+    '      const allUsers = await storage.getAllUsers();',
+    '      const needle = loginIdentifier.toLowerCase();',
+    '      user = allUsers.find((candidate: any) => {',
+    '        const emailPrefix = String(candidate.email || "").split("@")[0].toLowerCase();',
+    '        const fullName = String(candidate.nomeCompleto || "").trim().toLowerCase();',
+    '        return emailPrefix === needle || fullName === needle;',
+    '      });',
+    '    }',
+    '',
+    '    if (!user) {',
+    '      console.log("❌ Usuário não encontrado:", loginIdentifier);',
+    '      return done(null, false, { message: "Usuário ou email não encontrado" });',
+    '    }'
+  ].join("\n");
   auth = auth.replace(
     /async \(email, password, done\) => \{\s*try \{\s*console\.log\('🔍 Buscando usuário por email:', email\);\s*const user = await storage\.getUserByEmail\(email\);\s*if \(!user\) \{\s*console\.log\('❌ Usuário não encontrado:', email\);\s*return done\(null, false, \{ message: "Email não encontrado" \}\);\s*\}/s,
-    \`async (identifier, password, done) => {
-        try {
-          const loginIdentifier = String(identifier || "").trim();
-          console.log("🔍 Buscando usuário por email/usuário:", loginIdentifier);
-
-          let user = await storage.getUserByEmail(loginIdentifier);
-
-          // Development/test login alias used by the Skyvern validation flow.
-          // This maps the human-facing username to the real account email
-          // without adding a username column or duplicating the user record.
-          const configuredLoginUsername = String(process.env.LOGIN_USERNAME || "").trim().toLowerCase();
-          const configuredLoginEmail = String(process.env.LOGIN_EMAIL || "").trim();
-          if (!user && configuredLoginUsername && configuredLoginEmail &&
-              loginIdentifier.toLowerCase() === configuredLoginUsername) {
-            user = await storage.getUserByEmail(configuredLoginEmail);
-          }
-
-          // O banco V10 não possui uma coluna username. Para preservar o
-          // schema existente, quando o identificador não é email também
-          // aceitamos o prefixo do email (ex.: SkelleTu@dominio) e o nome
-          // completo cadastrado.
-          if (!user && loginIdentifier && !loginIdentifier.includes("@")) {
-            const allUsers = await storage.getAllUsers();
-            const needle = loginIdentifier.toLowerCase();
-            user = allUsers.find((candidate: any) => {
-              const emailPrefix = String(candidate.email || "").split("@")[0].toLowerCase();
-              const fullName = String(candidate.nomeCompleto || "").trim().toLowerCase();
-              return emailPrefix === needle || fullName === needle;
-            });
-          }
-
-          if (!user) {
-            console.log("❌ Usuário não encontrado:", loginIdentifier);
-            return done(null, false, { message: "Usuário ou email não encontrado" });
-          }\`
+    authReplacement
   );
-  auth = auth.replace(/console\.log\('👤 Usuário encontrado:', \{ id: user\.id, email: user\.email, aprovado: user\.contaAprovada \}\);/,
-    'console.log("👤 Usuário encontrado:", { id: user.id, email: user.email, aprovado: user.contaAprovada });');
-  auth = auth.replace(/console\.log\('⏳ Conta não aprovada:', email\);/g,
-    'console.log("⏳ Conta não aprovada:", loginIdentifier);');
-  auth = auth.replace(/console\.log\('🔐 Verificando senha para:', email\);/g,
-    'console.log("🔐 Verificando senha para:", loginIdentifier);');
-  auth = auth.replace(/console\.log\('❌ Senha incorreta para:', email\);/g,
-    'console.log("❌ Senha incorreta para:", loginIdentifier);');
-  auth = auth.replace(/console\.log\('✅ Login validado com sucesso para:', email\);/g,
-    'console.log("✅ Login validado com sucesso para:", loginIdentifier);');
+  auth = auth.replace(/console\.log\('👤 Usuário encontrado:', \{ id: user\.id, email: user\.email, aprovado: user\.contaAprovada \}\);/, 'console.log("👤 Usuário encontrado:", { id: user.id, email: user.email, aprovado: user.contaAprovada });');
+  auth = auth.replace(/console\.log\('⏳ Conta não aprovada:', email\);/g, 'console.log("⏳ Conta não aprovada:", loginIdentifier);');
+  auth = auth.replace(/console\.log\('🔐 Verificando senha para:', email\);/g, 'console.log("🔐 Verificando senha para:", loginIdentifier);');
+  auth = auth.replace(/console\.log\('❌ Senha incorreta para:', email\);/g, 'console.log("❌ Senha incorreta para:", loginIdentifier);');
+  auth = auth.replace(/console\.log\('✅ Login validado com sucesso para:', email\);/g, 'console.log("✅ Login validado com sucesso para:", loginIdentifier);');
   fs.writeFileSync(authPath, auth);
 
   const routesPath = path.join(root, "server/routes.ts");
   let routes = fs.readFileSync(routesPath, "utf8");
+  const routeReplacement = [
+    'console.log("🔐 Tentativa de login:", { identifier: req.body.identifier });',
+    'const validatedData = loginSchema.parse(req.body);',
+    'req.body.email = validatedData.identifier;'
+  ].join("\n      ");
   routes = routes.replace(
     /console\.log\('🔐 Tentativa de login:', \{ email: req\.body\.email \}\);\s*const validatedData = loginSchema\.parse\(req\.body\);/,
-    \`console.log("🔐 Tentativa de login:", { identifier: req.body.identifier });
-      const validatedData = loginSchema.parse(req.body);
-      // Passport's LocalStrategy is intentionally kept on usernameField="email"
-      // for compatibility with the existing V10 strategy. Normalize the new
-      // frontend identifier into that field before invoking Passport.
-      req.body.email = validatedData.identifier;\`
+    routeReplacement
   );
   fs.writeFileSync(routesPath, routes);
 
   const authPagePath = path.join(root, "client/src/pages/auth-page.tsx");
   let authPage = fs.readFileSync(authPagePath, "utf8");
+  authPage = authPage.replace('<Label htmlFor="login-email">Email</Label>', '<Label htmlFor="login-identifier">Email ou usuário</Label>');
   authPage = authPage.replace(
-    '<Label htmlFor="login-email">Email</Label>',
-    '<Label htmlFor="login-identifier">Email ou usuário</Label>'
-  );
-  authPage = authPage.replace(
-    \`id="login-email"
-                        type="email"
-                        {...loginForm.register("email")}
-                        placeholder="seu@email.com"\`,
-    \`id="login-identifier"
-                        type="text"
-                        autoComplete="username"
-                        {...loginForm.register("identifier")}
-                        placeholder="Email ou usuário"\`
+    'id="login-email"\n                        type="email"\n                        {...loginForm.register("email")}\n                        placeholder="seu@email.com"',
+    'id="login-identifier"\n                        type="text"\n                        autoComplete="username"\n                        {...loginForm.register("identifier")}\n                        placeholder="Email ou usuário"'
   );
   fs.writeFileSync(authPagePath, authPage);
 }
