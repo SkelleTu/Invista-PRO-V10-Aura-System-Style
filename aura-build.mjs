@@ -186,7 +186,7 @@ if (!s.includes('@import url("./aura-system.css");')) {
     '    const configuredLoginEmail = String(process.env.LOGIN_EMAIL || "").trim();',
     '    if (!user && configuredLoginUsername && configuredLoginEmail && loginIdentifier.toLowerCase() === configuredLoginUsername) {',
     '      user = await storage.getUserByEmail(configuredLoginEmail);',
-    }',
+    '    }',
     '',
     '    if (!user && loginIdentifier && !loginIdentifier.includes("@")) {',
     '      const allUsers = await storage.getAllUsers();',
