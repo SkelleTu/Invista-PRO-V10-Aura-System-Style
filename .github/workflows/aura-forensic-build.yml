@@ -1,6 +1,10 @@
 name: Aura forensic build
 # forensic validation workflow
 
+concurrency:
+  group: aura-forensic-build
+  cancel-in-progress: true
+
 on:
   push:
     branches:
