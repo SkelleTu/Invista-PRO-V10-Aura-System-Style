@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
+import { execFileSync } from "node:child_process";
 
 const root = process.cwd();
 
@@ -432,8 +433,10 @@ if (!s.includes('@import url("./aura-system.css");')) {
   };
   walk(root);
   entries.sort((a, b) => a.path.localeCompare(b.path));
+  const canonicalSourceCommit = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
   fs.writeFileSync(path.join(root, "forensic-manifest.json"), JSON.stringify({
     generatedAt: new Date().toISOString(),
+    canonicalSourceCommit,
     root: "canonical-invista-source-plus-aura-build-assets",
     totalFiles: entries.length,
     analyzedFiles: entries.filter(x => x.inspectable).length,
