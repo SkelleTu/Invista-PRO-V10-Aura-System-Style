@@ -8,7 +8,7 @@ on:
       - forensic-observability-2026-10-05
 
 concurrency:
-  group: invista-full-platform-audit-v2
+  group: invista-full-platform-audit-v3
   cancel-in-progress: false
 
 jobs:
@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      CANONICAL_INVISTA_COMMIT: 5b4753c015e7c3be5469182c06aa65f4ceb5f4f2
+      CANONICAL_INVISTA_COMMIT: 5762e260097e95a5795492cdc6e7149d478202df
     steps:
       - name: Checkout Aura forensic branch
         uses: actions/checkout@v4
