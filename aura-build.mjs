@@ -426,7 +426,7 @@ if (!s.includes('@import url("./aura-system.css");')) {
         errorLogging: count(/\bconsole\.(error|warn)\s*\(/g),
         throws: count(/\bthrow\s+new\b/g),
         todos: count(/\b(TODO|FIXME|HACK)\b/gi),
-        credentialLikeLiterals: count(/(?:password|secret|token|api[_-]?key|private[_-]?key)\\s*[:=]\\s*["'`][^"'`]{4,}/gi),
+        credentialLikeLiterals: count(/(?:password|secret|token|api[_-]?key|private[_-]?key)\\s*[:=]\\s*["\'`][^"\'`]{4,}/gi),
       } : null;
       entries.push({ path: relative, size: bytes.length, sha256: hash, ...meta, analysis });
     }
