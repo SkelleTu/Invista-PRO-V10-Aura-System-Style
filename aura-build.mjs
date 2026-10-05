@@ -74,27 +74,31 @@ fs.writeFileSync(path.join(root, "server/vite.ts"), productionSafeVite);
 
 // Production build must not import Vite at all. Keep the logger/static serving
 // used by production in separate modules so esbuild cannot pull Vite into dist.
-const loggerSource = \`export function log(message: string, source = "express") {
-  const formattedTime = new Date().toLocaleTimeString("en-US", {
-    hour: "numeric", minute: "2-digit", second: "2-digit", hour12: true,
-  });
-  console.log(\`\${formattedTime} [\${source}] \${message}\`);
-}
-\`;
+const loggerSource = [
+  'export function log(message: string, source = "express") {',
+  '  const formattedTime = new Date().toLocaleTimeString("en-US", {',
+  '    hour: "numeric", minute: "2-digit", second: "2-digit", hour12: true,',
+  '  });',
+  '  console.log(formattedTime + " [" + source + "] " + message);',
+  '}',
+  ''
+].join("\\n");
 fs.writeFileSync(path.join(root, "server/logger.ts"), loggerSource);
 
-const staticServerSource = \`import express, { type Express } from "express";
-import fs from "fs";
-import path from "path";
-
-export function serveStatic(app: Express) {
-  const distPath = path.resolve(import.meta.dirname, "public");
-  if (!fs.existsSync(distPath)) {
-    throw new Error(\`Could not find the build directory: \${distPath}, make sure to build the client first\`);
-  }
-  app.use(express.static(distPath));
-}
-\`;
+const staticServerSource = [
+  'import express, { type Express } from "express";',
+  'import fs from "fs";',
+  'import path from "path";',
+  '',
+  'export function serveStatic(app: Express) {',
+  '  const distPath = path.resolve(import.meta.dirname, "public");',
+  '  if (!fs.existsSync(distPath)) {',
+  '    throw new Error("Could not find the build directory: " + distPath + ", make sure to build the client first");',
+  '  }',
+  '  app.use(express.static(distPath));',
+  '}',
+  ''
+].join("\\n");
 fs.writeFileSync(path.join(root, "server/static-server.ts"), staticServerSource);
 
 const indexPath = path.join(root, "server/index.ts");
