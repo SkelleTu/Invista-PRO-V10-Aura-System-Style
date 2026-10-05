@@ -369,7 +369,7 @@ if (!s.includes('@import url("./aura-system.css");')) {
   );
   authPage = authPage.replace(
     'placeholder="Email ou usuário"\n                        className="h-10 sm:h-12"',
-    'placeholder="Email ou usuário"\n                        required\n                        autoComplete="username"\n                        className="h-10 sm:h-12"'
+    'placeholder="Email ou usuário"\n                        required\n                        className="h-10 sm:h-12"'
   );
   authPage = authPage.replace(
     '<EyeOff className="h-4 w-4" />',
