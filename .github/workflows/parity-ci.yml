@@ -43,6 +43,10 @@ jobs:
           node aura-build.mjs
           npm install --include=dev --production=false
 
+      - name: Inspect generated authentication JSX
+        working-directory: /tmp/invista-source
+        run: nl -ba client/src/pages/auth-page.tsx | sed -n "250,270p"
+
       - name: Typecheck canonical Aura source
         working-directory: /tmp/invista-source
         run: npm exec -- tsc --noEmit
