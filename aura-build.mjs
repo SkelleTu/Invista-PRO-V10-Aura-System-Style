@@ -107,9 +107,9 @@ const indexPath = path.join(root, "server/index.ts");
 let indexSource = fs.readFileSync(indexPath, "utf8");
 indexSource = indexSource.replace(
   'import { setupVite, serveStatic, log } from "./vite";',
-  'import { log } from "./logger";' + String.fromCharCode(10) + 'import { serveStatic } from "./static-server";'
+  'import { setupVite } from "./vite";' + String.fromCharCode(10) + 'import { log } from "./logger";' + String.fromCharCode(10) + 'import { serveStatic } from "./static-server";',
 );
-indexSource = indexSource.replace("const app = express();", "const setupVite = async (app, server) => (await import(\"./vite\")).setupVite(app, server);\\nconst app = express();");\nfs.writeFileSync(indexPath, indexSource);
+fs.writeFileSync(indexPath, indexSource);
 const copy = (a, b) => {
   fs.mkdirSync(path.dirname(b), { recursive: true });
   fs.copyFileSync(a, b);
