@@ -1,4 +1,5 @@
 name: Invista PRO V10 full platform audit
+# Release audit hardened 2026-10-05
 
 on:
   workflow_dispatch:
