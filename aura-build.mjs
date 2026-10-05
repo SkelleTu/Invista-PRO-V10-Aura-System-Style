@@ -203,6 +203,8 @@ if (!s.includes('@import url("./aura-system.css");')) {
     '      return done(null, false, { message: "Usuário ou email não encontrado" });',
     '    }'
   ].join("\n");
+  auth = auth.replace(/\{ usernameField: "email" \}/g, '{ usernameField: "identifier" }');
+
   auth = auth.replace(
     /async \(email, password, done\) => \{\s*try \{\s*console\.log\('🔍 Buscando usuário por email:', email\);\s*const user = await storage\.getUserByEmail\(email\);\s*if \(!user\) \{\s*console\.log\('❌ Usuário não encontrado:', email\);\s*return done\(null, false, \{ message: "Email não encontrado" \}\);\s*\}/s,
     authReplacement
