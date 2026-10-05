@@ -253,10 +253,17 @@ if (!s.includes('@import url("./aura-system.css");')) {
         '<head>\n    <title>InvistaPRO | Plataforma de Investimentos</title>'
       );
     }
+    const sourceIcon = path.join(root, "client/src/assets/investpro-icon.png");
+    const publicDir = path.join(root, "client/public");
+    if (fs.existsSync(sourceIcon)) {
+      fs.mkdirSync(publicDir, { recursive: true });
+      fs.copyFileSync(sourceIcon, path.join(publicDir, "favicon.ico"));
+      fs.copyFileSync(sourceIcon, path.join(publicDir, "favicon.png"));
+    }
     if (!/rel=["']icon["']/i.test(indexHtml)) {
       indexHtml = indexHtml.replace(
         /<head>/i,
-        '<head>\n    <link rel="icon" type="image/png" href="/assets/investpro-icon.png" />'
+        '<head>\n    <link rel="icon" type="image/png" href="/favicon.png" />'
       );
     }
     fs.writeFileSync(indexHtmlPath, indexHtml);
