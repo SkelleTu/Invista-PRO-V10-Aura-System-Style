@@ -28,12 +28,12 @@ jobs:
 
       - name: Build Aura from pinned canonical revision
         env:
-          CANONICAL_INVISTA_COMMIT: 2ca5cbf6979ae290787eab3b0feb145f8162cc8c
+          CANONICAL_INVISTA_COMMIT: 9add45bcf5ee588085674dec78a4cc24fb4d74fe
         run: npm run build
 
       - name: Verify canonical revision and forensic manifest
         env:
-          EXPECTED_CANONICAL_COMMIT: 2ca5cbf6979ae290787eab3b0feb145f8162cc8c
+          EXPECTED_CANONICAL_COMMIT: 9add45bcf5ee588085674dec78a4cc24fb4d74fe
         run: |
           node - <<'NODE'
           const fs = require('fs');
@@ -56,7 +56,7 @@ jobs:
 
       - name: TypeScript check on canonical source
         env:
-          CANONICAL_INVISTA_COMMIT: 2ca5cbf6979ae290787eab3b0feb145f8162cc8c
+          CANONICAL_INVISTA_COMMIT: 9add45bcf5ee588085674dec78a4cc24fb4d74fe
         run: |
           test -f /tmp/invista-source/package.json
           test "$(git -C /tmp/invista-source rev-parse HEAD)" = "$CANONICAL_INVISTA_COMMIT"
