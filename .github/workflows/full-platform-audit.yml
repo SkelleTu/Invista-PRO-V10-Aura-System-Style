@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      CANONICAL_INVISTA_COMMIT: f762fc5b1f54f8552886d61622714fb88cab121b
+      CANONICAL_INVISTA_COMMIT: 5b4753c015e7c3be5469182c06aa65f4ceb5f4f2
     steps:
       - name: Checkout Aura forensic branch
         uses: actions/checkout@v4
