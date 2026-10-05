@@ -1,0 +1,88 @@
+name: Aura System Style Full Platform Audit
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  full-platform-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout Aura
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Repository integrity
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fsck --no-progress --full
+          test -f package.json
+          test -f package-lock.json
+          test -f aura-build.mjs
+          test -f .invista-core-source
+
+      - name: Verify canonical Invista core reference
+        shell: bash
+        run: |
+          set -euo pipefail
+          CORE_SHA="$(git ls-remote https://github.com/SkelleTu/InvistaPro-V10.git refs/heads/main | awk '{print $1}')"
+          test -n "$CORE_SHA"
+          test "$(tr -d '[:space:]' < .invista-core-source)" = "$CORE_SHA"
+
+      - name: Clean dependency install
+        run: npm ci
+
+      - name: TypeScript validation
+        run: npm run check
+
+      - name: Production build
+        run: npm run build
+
+      - name: Verify production artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d dist
+          test -f dist/index.js
+          find dist -type f -size +0c | grep -q .
+          test -s dist/index.js
+
+      - name: Production dependency vulnerability audit
+        run: npm audit --omit=dev --audit-level high
+
+      - name: Production boot contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e
+          NODE_ENV=production INVISTA_PLATFORM=aura timeout 12s node dist/index.js > /tmp/aura-boot.log 2>&1
+          rc=$?
+          set -e
+          cat /tmp/aura-boot.log
+          if grep -Eqi "SyntaxError|ReferenceError|MODULE_NOT_FOUND|ERR_MODULE_NOT_FOUND|Cannot find package" /tmp/aura-boot.log; then
+            echo "Production boot contract detected a runtime/module failure."
+            exit 1
+          fi
+          if [ "$rc" -eq 0 ]; then
+            echo "Unexpected clean exit during boot contract."
+            exit 1
+          fi
+          echo "Boot reached an application-level startup condition without module/runtime loading errors."
+
+      - name: Final working tree verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          git status --short
