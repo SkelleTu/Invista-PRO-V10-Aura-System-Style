@@ -22,9 +22,6 @@ jobs:
           node-version: 20
           cache: npm
 
-      - name: Install Aura wrapper dependencies
-        run: npm ci
-
       - name: Build Aura from pinned canonical revision
         env:
           CANONICAL_INVISTA_COMMIT: 2ca5cbf6979ae290787eab3b0feb145f8162cc8c
