@@ -239,3 +239,61 @@ if (!s.includes('@import url("./aura-system.css");')) {
   );
   fs.writeFileSync(authPagePath, authPage);
 }
+
+
+// Accessibility and document metadata hardening for the Aura production build
+{
+  const indexHtmlPath = path.join(root, "client/index.html");
+  if (fs.existsSync(indexHtmlPath)) {
+    let indexHtml = fs.readFileSync(indexHtmlPath, "utf8");
+    indexHtml = indexHtml.replace(/<html\s+lang="[^"]*">/i, '<html lang="pt-BR">');
+    if (!/<title>/i.test(indexHtml)) {
+      indexHtml = indexHtml.replace(
+        /<head>/i,
+        '<head>\n    <title>InvistaPRO | Plataforma de Investimentos</title>'
+      );
+    }
+    if (!/rel=["']icon["']/i.test(indexHtml)) {
+      indexHtml = indexHtml.replace(
+        /<head>/i,
+        '<head>\n    <link rel="icon" type="image/png" href="/assets/investpro-icon.png" />'
+      );
+    }
+    fs.writeFileSync(indexHtmlPath, indexHtml);
+  }
+
+  const authPagePath = path.join(root, "client/src/pages/auth-page.tsx");
+  let authPage = fs.readFileSync(authPagePath, "utf8");
+
+  authPage = authPage.replace(
+    '<form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-3 sm:space-y-4">',
+    '<form method="post" onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-3 sm:space-y-4">'
+  );
+  authPage = authPage.replace(
+    '<form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-3 sm:space-y-4">',
+    '<form method="post" onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-3 sm:space-y-4">'
+  );
+
+  authPage = authPage.replace(
+    'placeholder="Sua senha"\n                          className="h-10 sm:h-12 pr-10"',
+    'placeholder="Sua senha"\n                          required\n                          autoComplete="current-password"\n                          className="h-10 sm:h-12 pr-10"'
+  );
+  authPage = authPage.replace(
+    'placeholder="Email ou usuário"\n                        className="h-10 sm:h-12"',
+    'placeholder="Email ou usuário"\n                        required\n                        autoComplete="username"\n                        className="h-10 sm:h-12"'
+  );
+  authPage = authPage.replace(
+    '<EyeOff className="h-4 w-4" />',
+    '<EyeOff className="h-4 w-4" aria-hidden="true" />'
+  );
+  authPage = authPage.replace(
+    '<Eye className="h-4 w-4" />',
+    '<Eye className="h-4 w-4" aria-hidden="true" />'
+  );
+  authPage = authPage.replace(
+    'className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"',
+    'className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"\n                          aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}'
+  );
+
+  fs.writeFileSync(authPagePath, authPage);
+}
