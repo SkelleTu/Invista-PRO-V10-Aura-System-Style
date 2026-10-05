@@ -8,7 +8,7 @@ on:
       - forensic-observability-2026-10-05
 
 concurrency:
-  group: invista-full-platform-audit
+  group: invista-full-platform-audit-v2
   cancel-in-progress: false
 
 jobs:
