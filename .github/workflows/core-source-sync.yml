@@ -1,0 +1,47 @@
+name: Sync Invista Core Reference
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "aura-assets/**"
+      - "aura-build.mjs"
+      - "package.json"
+
+permissions:
+  contents: write
+
+jobs:
+  sync-core-reference:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Aura System Style
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Read canonical Invista core SHA
+        id: core
+        run: |
+          CORE_SHA=$(git ls-remote https://github.com/SkelleTu/InvistaPro-V10.git refs/heads/main | awk '{print $1}')
+          test -n "$CORE_SHA"
+          echo "sha=$CORE_SHA" >> "$GITHUB_OUTPUT"
+      - name: Update canonical core marker
+        run: |
+          printf '%s\n' "${{ steps.core.outputs.sha }}" > .invista-core-source
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .invista-core-source
+          if git diff --cached --quiet; then
+            echo "Canonical core marker already current."
+            exit 0
+          fi
+          git commit -m "chore: sync canonical Invista core reference"
+          git push
+      - name: Verify functional source
+        run: |
+          grep -q 'https://github.com/SkelleTu/InvistaPro-V10.git' package.json
+          grep -q 'node aura-build.mjs' package.json
+          echo "OK: every Aura build pulls the latest InvistaPro-V10 main core."
