@@ -1,0 +1,62 @@
+name: Aura forensic build
+
+on:
+  push:
+    branches:
+      - forensic-observability-2026-10-05
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout forensic branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Aura wrapper dependencies
+        run: npm ci
+
+      - name: Build Aura from pinned canonical revision
+        env:
+          CANONICAL_INVISTA_COMMIT: 2ca5cbf6979ae290787eab3b0feb145f8162cc8c
+        run: npm run build
+
+      - name: Verify canonical revision and forensic manifest
+        env:
+          EXPECTED_CANONICAL_COMMIT: 2ca5cbf6979ae290787eab3b0feb145f8162cc8c
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const manifest = JSON.parse(fs.readFileSync('dist/forensic-manifest.json', 'utf8'));
+          if (manifest.canonicalSourceCommit !== process.env.EXPECTED_CANONICAL_COMMIT) {
+            throw new Error('Canonical source revision mismatch: ' + manifest.canonicalSourceCommit);
+          }
+          if (!Number.isInteger(manifest.totalFiles) || manifest.totalFiles <= 0) {
+            throw new Error('Invalid forensic manifest file count');
+          }
+          if (manifest.analyzedFiles < 1 || manifest.analyzedFiles > manifest.totalFiles) {
+            throw new Error('Invalid forensic manifest analyzed file count');
+          }
+          console.log(JSON.stringify({
+            canonicalSourceCommit: manifest.canonicalSourceCommit,
+            totalFiles: manifest.totalFiles,
+            analyzedFiles: manifest.analyzedFiles
+          }, null, 2));
+          NODE
+
+      - name: TypeScript check on canonical source
+        env:
+          CANONICAL_INVISTA_COMMIT: 2ca5cbf6979ae290787eab3b0feb145f8162cc8c
+        run: |
+          test -f /tmp/invista-source/package.json
+          test "$(git -C /tmp/invista-source rev-parse HEAD)" = "$CANONICAL_INVISTA_COMMIT"
+          cd /tmp/invista-source
+          npm run check
