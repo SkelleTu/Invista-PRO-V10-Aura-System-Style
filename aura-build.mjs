@@ -398,9 +398,9 @@ if (!s.includes('@import url("./aura-system.css");')) {
   const entries = [];
   const classify = (relative) => {
     const p = relative.toLowerCase();
-    if (/\\.(ts|tsx|js|jsx|mjs|cjs|py|sh|sql|html|css|scss|json|yaml|yml|toml|xml|env|conf|config)$/i.test(p)) return { category: "source-or-config", inspectable: true };
-    if (/\\.(md|txt|pdf)$/i.test(p)) return { category: "documentation", inspectable: true };
-    if (/\\.(png|jpe?g|gif|webp|svg|ico|bmp|wav|mp3|oga|ttf|woff|zip|exe|ex5|hcc|chr|wnd|dat|lic|set|tpl|mq5)$/i.test(p)) return { category: "binary-or-asset", inspectable: false };
+    if (/\.(ts|tsx|js|jsx|mjs|cjs|py|sh|sql|html|css|scss|json|yaml|yml|toml|xml|env|conf|config)$/i.test(p)) return { category: "source-or-config", inspectable: true };
+    if (/\.(md|txt|pdf)$/i.test(p)) return { category: "documentation", inspectable: true };
+    if (/\.(png|jpe?g|gif|webp|svg|ico|bmp|wav|mp3|oga|ttf|woff|zip|exe|ex5|hcc|chr|wnd|dat|lic|set|tpl|mq5)$/i.test(p)) return { category: "binary-or-asset", inspectable: false };
     return { category: "other", inspectable: true };
   };
   const walk = (dir) => {
@@ -415,17 +415,17 @@ if (!s.includes('@import url("./aura-system.css");')) {
       const textContent = meta.inspectable && bytes.length <= 5_000_000 ? bytes.toString("utf8") : "";
       const count = (pattern) => (textContent.match(pattern) || []).length;
       const analysis = meta.inspectable ? {
-        lines: textContent ? textContent.split(/\\r?\\n/).length : 0,
-        imports: count(/^\\s*import\\b/gm),
-        exports: count(/^\\s*export\\b/gm),
-        networkCalls: count(/\\bfetch\\s*\\(/g),
-        timers: count(/\\b(setInterval|setTimeout|setImmediate)\\s*\\(/g),
-        websocketRefs: count(/\\b(WebSocket|WebSocketServer)\\b/g),
-        processHandlers: count(/\\bprocess\\.on\\s*\\(/g),
-        routeDefinitions: count(/\\b(app|router)\\.(get|post|put|patch|delete|use)\\s*\\(/g),
-        errorLogging: count(/\\bconsole\\.(error|warn)\\s*\\(/g),
-        throws: count(/\\bthrow\\s+new\\b/g),
-        todos: count(/\\b(TODO|FIXME|HACK)\\b/gi),
+        lines: textContent ? textContent.split(/\r?\n/).length : 0,
+        imports: count(/^\s*import\b/gm),
+        exports: count(/^\s*export\b/gm),
+        networkCalls: count(/\bfetch\s*\(/g),
+        timers: count(/\b(setInterval|setTimeout|setImmediate)\s*\(/g),
+        websocketRefs: count(/\b(WebSocket|WebSocketServer)\b/g),
+        processHandlers: count(/\bprocess\.on\s*\(/g),
+        routeDefinitions: count(/\b(app|router)\.(get|post|put|patch|delete|use)\s*\(/g),
+        errorLogging: count(/\bconsole\.(error|warn)\s*\(/g),
+        throws: count(/\bthrow\s+new\b/g),
+        todos: count(/\b(TODO|FIXME|HACK)\b/gi),
         credentialLikeLiterals: count(/(?:password|secret|token|api[_-]?key|private[_-]?key)\\s*[:=]\\s*["'`][^"'`]{4,}/gi),
       } : null;
       entries.push({ path: relative, size: bytes.length, sha256: hash, ...meta, analysis });
