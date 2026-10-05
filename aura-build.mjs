@@ -100,6 +100,10 @@ fs.writeFileSync(path.join(root, "server/static-server.ts"), staticServerSource)
 const indexPath = path.join(root, "server/index.ts");
 let indexSource = fs.readFileSync(indexPath, "utf8");
 indexSource = indexSource.replace(
+  'if (app.get("env") === "development") {\\n    setupVite(app, server).catch((e: any) => console.warn("⚠️ Vite setup error:", e));\\n  } else {\\n    serveStatic(app);\\n  }',
+  'if (app.get("env") === "development") {\\n    import("./vite").then(({ setupVite }) => setupVite(app, server)).catch((e: any) => console.warn("⚠️ Vite setup error:", e));\\n  } else {\\n    serveStatic(app);\\n  }'
+);
+indexSource = indexSource.replace(
   'import { setupVite, serveStatic, log } from "./vite";',
   'import { log } from "./logger";\\nimport { serveStatic } from "./static-server";'
 );
