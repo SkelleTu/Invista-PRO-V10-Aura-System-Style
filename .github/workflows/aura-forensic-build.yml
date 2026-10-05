@@ -54,6 +54,24 @@ jobs:
           }, null, 2));
           NODE
 
+      - name: Validate complete manifest integrity
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const m = JSON.parse(fs.readFileSync('dist/forensic-manifest.json', 'utf8'));
+          if (!Array.isArray(m.entries)) throw new Error('Manifest entries missing');
+          if (m.entries.length !== m.totalFiles) throw new Error('Manifest count mismatch');
+          const paths = new Set(m.entries.map(e => e.path));
+          if (paths.size !== m.entries.length) throw new Error('Duplicate manifest paths detected');
+          for (const e of m.entries) {
+            if (!e.path || !Number.isInteger(e.size) || e.size < 0 || !/^[a-f0-9]{64}$/i.test(e.sha256)) throw new Error('Invalid manifest entry: ' + JSON.stringify(e));
+          }
+          const hashes = new Map();
+          for (const e of m.entries) hashes.set(e.sha256, (hashes.get(e.sha256) || 0) + 1);
+          const duplicateContent = [...hashes.values()].filter(n => n > 1).length;
+          console.log(JSON.stringify({ totalFiles:m.totalFiles, analyzedFiles:m.analyzedFiles, uniquePaths:paths.size, duplicateContentHashes:duplicateContent }, null, 2));
+          NODE
+
       - name: TypeScript check on canonical source
         env:
           CANONICAL_INVISTA_COMMIT: 6bd172a1e1acc378df7616ad21abbc280b4b9639
