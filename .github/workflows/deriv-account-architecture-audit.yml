@@ -11,52 +11,49 @@ permissions:
 jobs:
   deriv-account-audit:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
     steps:
       - name: Checkout Aura
         uses: actions/checkout@v4
 
-      - name: Inventory Aura and canonical core
+      - name: Checkout canonical Invista core
+        uses: actions/checkout@v4
+        with:
+          repository: SkelleTu/InvistaPro-V10
+          path: /tmp/invista-core
+
+      - name: Validate Aura and Core Deriv architecture
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p audit-artifacts
-          git clone --depth 1 https://github.com/SkelleTu/InvistaPro-V10.git /tmp/invista-core
-          {
-            echo "# Deriv Account Architecture Audit"
-            echo "Aura commit: `$(git rev-parse HEAD)`"
-            echo "Canonical core commit: `$(git -C /tmp/invista-core rev-parse HEAD)`"
-            echo
-            echo "## Aura markers"
-            git grep -nEi 'deriv|accountId|accountType|loginid|authorize|otp|websockets/v3|api\.derivws|trading/v1|/demo|/real' -- ':!*.lock' || true
-            echo
-            echo "## Canonical core markers"
-            git -C /tmp/invista-core grep -nEi 'deriv|accountId|accountType|loginid|authorize|otp|websockets/v3|api\.derivws|trading/v1|/demo|/real' -- ':!*.lock' || true
-          } | tee audit-artifacts/deriv-aura-inventory.md
+          python3 - <<'PY'
+          from pathlib import Path
+          exts={".ts",".tsx",".js",".jsx",".mjs",".cjs"}
+          def source(root):
+              return "\n".join(p.read_text(errors="ignore") for p in Path(root).rglob("*") if p.is_file() and p.suffix in exts and "node_modules" not in p.parts and ".git" not in p.parts and "dist" not in p.parts)
+          aura=source(".")
+          core=source("/tmp/invista-core")
+          required=["api.derivws.com","/otp","accountId","accountType","demo","real"]
+          forbidden=["ws.derivws.com/websockets/v3","ws.binaryws.com/websockets/v3","authorize:"]
+          missing_aura=[x for x in required if x not in aura]
+          missing_core=[x for x in required if x not in core]
+          bad_aura=[x for x in forbidden if x in aura]
+          bad_core=[x for x in forbidden if x in core]
+          Path("audit-artifacts/deriv-aura-core-report.md").write_text(
+              f"# Aura/Core Deriv Architecture\n\nAura missing: {missing_aura}\nCore missing: {missing_core}\n"
+              f"Aura legacy markers: {bad_aura}\nCore legacy markers: {bad_core}\n"
+          )
+          print(Path("audit-artifacts/deriv-aura-core-report.md").read_text())
+          if missing_aura or missing_core or bad_aura or bad_core:
+              raise SystemExit(1)
+          PY
 
-      - name: Validate Aura/Core Deriv parity contract
-        shell: bash
+      - name: Canonical core TypeScript validation
+        working-directory: /tmp/invista-core
         run: |
-          set -euo pipefail
-          aura_markers="$(git grep -Ei 'accountId|accountType|authorize|otp|api\.derivws|websockets/v3|/demo|/real' -- ':!*.lock' | wc -l || true)"
-          core_markers="$(git -C /tmp/invista-core grep -Ei 'accountId|accountType|authorize|otp|api\.derivws|websockets/v3|/demo|/real' -- ':!*.lock' | wc -l || true)"
-          echo "aura_markers=$aura_markers"
-          echo "core_markers=$core_markers"
-          if [ "$core_markers" -eq 0 ]; then
-            echo "::error::Canonical Invista core exposes no detectable Deriv account-routing implementation."
-            exit 1
-          fi
-          if [ "$aura_markers" -eq 0 ]; then
-            echo "::error::Aura has no detectable Deriv account-routing reference."
-            exit 1
-          fi
-
-      - name: Run canonical core Deriv architecture audit
-        run: |
-          cd /tmp/invista-core
-          test -f package.json
           npm ci --ignore-scripts --no-audit
-          if npm pkg get scripts.typecheck | grep -qv 'null'; then npm run typecheck; fi
+          npm exec -- tsc --noEmit
 
       - name: Upload audit report
         if: always()
