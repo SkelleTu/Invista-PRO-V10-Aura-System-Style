@@ -18,8 +18,8 @@ jobs:
       - name: Regenerate package-lock
         run: |
           rm -f package-lock.json
-          npm install --package-lock-only --ignore-scripts --no-audit
-          npm ci --ignore-scripts --no-audit
+          npm install --package-lock-only --include=dev --ignore-scripts --no-audit
+          npm ci --include=dev --ignore-scripts --no-audit
       - name: Commit repaired lockfile
         run: |
           if git diff --quiet -- package-lock.json package.json; then
