@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: SkelleTu/InvistaPro-V10
-          path: /tmp/invista-core
+          path: invista-core
 
       - name: Validate Aura and Core Deriv architecture
         shell: bash
@@ -29,28 +29,25 @@ jobs:
           mkdir -p audit-artifacts
           python3 - <<'PY'
           from pathlib import Path
-          exts={".ts",".tsx",".js",".jsx",".mjs",".cjs"}
           def source(root):
-              return "\n".join(p.read_text(errors="ignore") for p in Path(root).rglob("*") if p.is_file() and p.suffix in exts and "node_modules" not in p.parts and ".git" not in p.parts and "dist" not in p.parts)
+              return "\n".join(p.read_text(errors="ignore") for p in Path(root).rglob("*") if p.is_file() and p.suffix in {".ts",".tsx",".js",".jsx",".mjs",".cjs"} and "node_modules" not in p.parts and ".git" not in p.parts and "dist" not in p.parts)
           aura=source(".")
-          core=source("/tmp/invista-core")
+          core=source("invista-core")
           required=["api.derivws.com","/otp","accountId","accountType","demo","real"]
           forbidden=["ws.derivws.com/websockets/v3","ws.binaryws.com/websockets/v3","authorize:"]
           missing_aura=[x for x in required if x not in aura]
           missing_core=[x for x in required if x not in core]
           bad_aura=[x for x in forbidden if x in aura]
           bad_core=[x for x in forbidden if x in core]
-          Path("audit-artifacts/deriv-aura-core-report.md").write_text(
-              f"# Aura/Core Deriv Architecture\n\nAura missing: {missing_aura}\nCore missing: {missing_core}\n"
-              f"Aura legacy markers: {bad_aura}\nCore legacy markers: {bad_core}\n"
-          )
-          print(Path("audit-artifacts/deriv-aura-core-report.md").read_text())
+          report=f"# Aura/Core Deriv Architecture\n\nAura missing: {missing_aura}\nCore missing: {missing_core}\nAura legacy: {bad_aura}\nCore legacy: {bad_core}\n"
+          Path("audit-artifacts/deriv-aura-core-report.md").write_text(report)
+          print(report)
           if missing_aura or missing_core or bad_aura or bad_core:
               raise SystemExit(1)
           PY
 
       - name: Canonical core TypeScript validation
-        working-directory: /tmp/invista-core
+        working-directory: invista-core
         run: |
           npm ci --ignore-scripts --no-audit
           npm exec -- tsc --noEmit
