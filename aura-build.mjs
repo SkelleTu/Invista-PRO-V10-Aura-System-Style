@@ -5,11 +5,12 @@ const root = process.cwd();
 
 const auraDependencyOverridesPath = path.join(root, "package.json");
 const auraDependencyOverrides = JSON.parse(fs.readFileSync(auraDependencyOverridesPath, "utf8"));
-auraDependencyOverrides.overrides = {
-  ...(auraDependencyOverrides.overrides || {}),
-  "puppeteer": "^25.8.0",
-  "glob": "10.5.0",
-};
+// The Aura layer does not use the legacy WhatsApp client. Keep it out of the
+// production dependency graph because it pulls Puppeteer/extract-zip into the
+// server image and extract-zip has no patched npm release for the current CVE.
+delete auraDependencyOverrides.dependencies?.["whatsapp-web.js"];
+delete auraDependencyOverrides.overrides?.["puppeteer"];
+delete auraDependencyOverrides.overrides?.["glob"];
 fs.writeFileSync(
   auraDependencyOverridesPath,
   JSON.stringify(auraDependencyOverrides, null, 2) + "\n"
