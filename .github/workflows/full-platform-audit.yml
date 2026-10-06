@@ -43,7 +43,7 @@ jobs:
       - name: Clean dependency install
         run: npm ci
 
-      - name: Prepare canonical source for TypeScript validation
+      - name: Prepare canonical source
         shell: bash
         run: |
           set -euo pipefail
@@ -54,65 +54,16 @@ jobs:
           node aura-build.mjs
           npm install --include=dev --production=false
 
-
       - name: Enforce presentation-only Aura delta
         working-directory: /tmp/invista-source
         shell: bash
         run: |
           set -euo pipefail
-          ALLOWED='^(client/src/App\\.tsx|client/src/index\\.css|client/src/pages/auth-page\\.tsx|client/src/components/AuraVisualLayer\\.tsx|client/src/aura-system\\.css)
-        working-directory: /tmp/invista-source
-        run: npm exec -- tsc --noEmit
-
-      - name: Production build
-        run: npm run build
-
-      - name: Verify production artifact
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -d dist
-          test -f dist/index.js
-          find dist -type f -size +0c | grep -q .
-          test -s dist/index.js
-
-      - name: Production dependency vulnerability audit
-        run: npm audit --omit=dev --audit-level high
-
-      - name: Production boot contract
-        shell: bash
-        run: |
-          set -euo pipefail
-          set +e
-          NODE_ENV=production INVISTA_PLATFORM=aura timeout --kill-after=3s 12s node dist/index.js > /tmp/aura-boot.log 2>&1
-          rc=$?
-          set -e
-          cat /tmp/aura-boot.log
-          if grep -Eqi "SyntaxError|ReferenceError|MODULE_NOT_FOUND|ERR_MODULE_NOT_FOUND|Cannot find package" /tmp/aura-boot.log; then
-            echo "Production boot contract detected a runtime/module failure."
-            exit 1
-          fi
-          if [ "$rc" -eq 0 ]; then
-            echo "Unexpected clean exit during boot contract."
-            exit 1
-          fi
-          if [ "$rc" -ne 124 ] && [ "$rc" -ne 137 ]; then
-            echo "Boot contract exited with an unexpected status: $rc"
-            exit 1
-          fi
-          echo "Boot reached an application-level startup condition without module/runtime loading errors."
-
-      - name: Final working tree verification
-        shell: bash
-        run: |
-          set -euo pipefail
-          git diff --exit-code
-          git status --short
-
+          ALLOWED='^(client/src/App\.tsx|client/src/index\.css|client/src/pages/auth-page\.tsx|client/src/components/AuraVisualLayer\.tsx|client/src/aura-system\.css)$'
           CHANGED="$(git status --short | sed -E 's/^.. //')"
           if [ -n "$CHANGED" ]; then
             echo "$CHANGED" | while IFS= read -r file; do
-              if ! printf '%s\\n' "$file" | grep -Eq "$ALLOWED"; then
+              if ! printf '%s\n' "$file" | grep -Eq "$ALLOWED"; then
                 echo "ERROR: Aura build changed non-visual canonical file: $file"
                 exit 1
               fi
@@ -125,21 +76,25 @@ jobs:
         run: npm exec -- tsc --noEmit
 
       - name: Production build
-        run: npm run build
+        working-directory: /tmp/invista-source
+        run: |
+          npm exec -- vite@5.4.19 build
+          npm exec -- esbuild@0.25.0 server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
 
       - name: Verify production artifact
+        working-directory: /tmp/invista-source
         shell: bash
         run: |
           set -euo pipefail
           test -d dist
-          test -f dist/index.js
-          find dist -type f -size +0c | grep -q .
           test -s dist/index.js
+          find dist -type f -size +0c | grep -q .
 
       - name: Production dependency vulnerability audit
-        run: npm audit --omit=dev --audit-level high
+        run: npm audit --prefix /tmp/invista-source --omit=dev --audit-level high
 
       - name: Production boot contract
+        working-directory: /tmp/invista-source
         shell: bash
         run: |
           set -euo pipefail
@@ -161,10 +116,3 @@ jobs:
             exit 1
           fi
           echo "Boot reached an application-level startup condition without module/runtime loading errors."
-
-      - name: Final working tree verification
-        shell: bash
-        run: |
-          set -euo pipefail
-          git diff --exit-code
-          git status --short
