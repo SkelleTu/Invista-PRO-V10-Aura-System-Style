@@ -1,0 +1,66 @@
+name: Deriv Account Architecture Audit
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deriv-account-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout Aura
+        uses: actions/checkout@v4
+
+      - name: Inventory Aura and canonical core
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p audit-artifacts
+          git clone --depth 1 https://github.com/SkelleTu/InvistaPro-V10.git /tmp/invista-core
+          {
+            echo "# Deriv Account Architecture Audit"
+            echo "Aura commit: `$(git rev-parse HEAD)`"
+            echo "Canonical core commit: `$(git -C /tmp/invista-core rev-parse HEAD)`"
+            echo
+            echo "## Aura markers"
+            git grep -nEi 'deriv|accountId|accountType|loginid|authorize|otp|websockets/v3|api\.derivws|trading/v1|/demo|/real' -- ':!*.lock' || true
+            echo
+            echo "## Canonical core markers"
+            git -C /tmp/invista-core grep -nEi 'deriv|accountId|accountType|loginid|authorize|otp|websockets/v3|api\.derivws|trading/v1|/demo|/real' -- ':!*.lock' || true
+          } | tee audit-artifacts/deriv-aura-inventory.md
+
+      - name: Validate Aura/Core Deriv parity contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          aura_markers="$(git grep -Ei 'accountId|accountType|authorize|otp|api\.derivws|websockets/v3|/demo|/real' -- ':!*.lock' | wc -l || true)"
+          core_markers="$(git -C /tmp/invista-core grep -Ei 'accountId|accountType|authorize|otp|api\.derivws|websockets/v3|/demo|/real' -- ':!*.lock' | wc -l || true)"
+          echo "aura_markers=$aura_markers"
+          echo "core_markers=$core_markers"
+          if [ "$core_markers" -eq 0 ]; then
+            echo "::error::Canonical Invista core exposes no detectable Deriv account-routing implementation."
+            exit 1
+          fi
+          if [ "$aura_markers" -eq 0 ]; then
+            echo "::error::Aura has no detectable Deriv account-routing reference."
+            exit 1
+          fi
+
+      - name: Run canonical core Deriv architecture audit
+        run: |
+          cd /tmp/invista-core
+          test -f package.json
+          npm ci --ignore-scripts --no-audit
+          if npm pkg get scripts.typecheck | grep -qv 'null'; then npm run typecheck; fi
+
+      - name: Upload audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deriv-aura-account-audit-report
+          path: audit-artifacts/
