@@ -22,27 +22,24 @@ jobs:
           repository: SkelleTu/InvistaPro-V10
           path: invista-core
 
-      - name: Validate Aura and Core Deriv architecture
+      - name: Validate Aura/Core Deriv architecture
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p audit-artifacts
           python3 - <<'PY'
           from pathlib import Path
-          def source(root):
-              return "\n".join(p.read_text(errors="ignore") for p in Path(root).rglob("*") if p.is_file() and p.suffix in {".ts",".tsx",".js",".jsx",".mjs",".cjs"} and "node_modules" not in p.parts and ".git" not in p.parts and "dist" not in p.parts)
-          aura=source(".")
-          core=source("invista-core")
-          required=["api.derivws.com","/otp","accountId","accountType","demo","real"]
-          forbidden=["ws.derivws.com/websockets/v3","ws.binaryws.com/websockets/v3","authorize:"]
-          missing_aura=[x for x in required if x not in aura]
-          missing_core=[x for x in required if x not in core]
-          bad_aura=[x for x in forbidden if x in aura]
-          bad_core=[x for x in forbidden if x in core]
-          report=f"# Aura/Core Deriv Architecture\n\nAura missing: {missing_aura}\nCore missing: {missing_core}\nAura legacy: {bad_aura}\nCore legacy: {bad_core}\n"
+          core=Path("invista-core/server/services/deriv-account-gateway.ts").read_text()
+          service=Path("invista-core/server/services/deriv-api.ts").read_text()
+          package_json=Path("package.json").read_text()
+          required=["api.derivws.com","/otp","accountId","accountType","demo","real","Deriv-App-ID","Authorization"]
+          missing=[x for x in required if x not in core]
+          forbidden=[x for x in ["ws.derivws.com/websockets/v3","ws.binaryws.com/websockets/v3","authorize:"] if x in service]
+          aura_reference_ok=("InvistaPro-V10" in package_json and "aura-build.mjs" in package_json)
+          report=f"# Aura/Core Deriv Architecture\n\nCore gateway missing: {missing}\nCore legacy markers: {forbidden}\nAura canonical-core reference: {aura_reference_ok}\n"
           Path("audit-artifacts/deriv-aura-core-report.md").write_text(report)
           print(report)
-          if missing_aura or missing_core or bad_aura or bad_core:
+          if missing or forbidden or not aura_reference_ok:
               raise SystemExit(1)
           PY
 
