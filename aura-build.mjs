@@ -90,7 +90,7 @@ const legacyWhatsAppServicePath = path.join(root, "server/whatsappService.ts");
 if (fs.existsSync(legacyWhatsAppServicePath)) {
   fs.rmSync(legacyWhatsAppServicePath);
 }
-\nfs.writeFileSync(path.join(root, "server/vite.ts"), productionSafeVite);
+fs.writeFileSync(path.join(root, "server/vite.ts"), productionSafeVite);
 
 // Production build must not import Vite at all. Keep the logger/static serving
 // used by production in separate modules so esbuild cannot pull Vite into dist.
