@@ -17,8 +17,9 @@ jobs:
           node-version: 22
       - name: Regenerate package-lock
         run: |
-          npm install --package-lock-only --ignore-scripts
-          npm ci --ignore-scripts
+          rm -f package-lock.json
+          npm install --package-lock-only --ignore-scripts --no-audit
+          npm ci --ignore-scripts --no-audit
       - name: Commit repaired lockfile
         run: |
           if git diff --quiet -- package-lock.json package.json; then
@@ -27,6 +28,6 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package-lock.json
+          git add package-lock.json package.json
           git commit -m "chore: synchronize Aura npm lockfile"
           git push
