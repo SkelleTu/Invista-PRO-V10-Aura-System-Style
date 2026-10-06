@@ -89,13 +89,8 @@ export function serveStatic(app: Express) {
   app.use(express.static(distPath));
 }
 `;
-// The Aura deployment does not use the legacy WhatsApp notification service. Remove its
-// source from the generated canonical tree together with the dependency above,
-// preventing an unused Puppeteer/extract-zip security chain from entering dist.
-const legacyWhatsAppServicePath = path.join(root, "server/whatsappService.ts");
-if (fs.existsSync(legacyWhatsAppServicePath)) {
-  fs.rmSync(legacyWhatsAppServicePath);
-}
+// WhatsApp remains available to the generated source as a development-only dependency.
+// It is excluded from the production dependency audit and production install graph.
 fs.writeFileSync(path.join(root, "server/vite.ts"), productionSafeVite);
 
 // Production build must not import Vite at all. Keep the logger/static serving
