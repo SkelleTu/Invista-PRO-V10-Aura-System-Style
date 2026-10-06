@@ -43,9 +43,22 @@ jobs:
           node aura-build.mjs
           npm install --include=dev --production=false
 
-      - name: Inspect generated authentication JSX
+      - name: Enforce presentation-only Aura delta
         working-directory: /tmp/invista-source
-        run: nl -ba client/src/pages/auth-page.tsx | sed -n "250,270p"
+        shell: bash
+        run: |
+          set -euo pipefail
+          ALLOWED='^(client/src/App\.tsx|client/src/index\.css|client/src/pages/auth-page\.tsx|client/src/components/AuraVisualLayer\.tsx|client/src/aura-system\.css)$'
+          CHANGED="$(git status --short | sed -E 's/^.. //')"
+          if [ -n "$CHANGED" ]; then
+            echo "$CHANGED" | while IFS= read -r file; do
+              if ! printf '%s\n' "$file" | grep -Eq "$ALLOWED"; then
+                echo "ERROR: Aura build changed non-visual canonical file: $file"
+                exit 1
+              fi
+            done
+          fi
+          echo "OK: Aura build changes presentation files only."
 
       - name: Typecheck canonical Aura source
         working-directory: /tmp/invista-source
