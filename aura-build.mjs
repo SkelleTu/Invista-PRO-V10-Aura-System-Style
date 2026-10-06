@@ -3,6 +3,18 @@ import path from "node:path";
 
 const root = process.cwd();
 
+const auraDependencyOverridesPath = path.join(root, "package.json");
+const auraDependencyOverrides = JSON.parse(fs.readFileSync(auraDependencyOverridesPath, "utf8"));
+auraDependencyOverrides.overrides = {
+  ...(auraDependencyOverrides.overrides || {}),
+  "puppeteer": "^25.8.0",
+  "glob": "10.5.0",
+};
+fs.writeFileSync(
+  auraDependencyOverridesPath,
+  JSON.stringify(auraDependencyOverrides, null, 2) + "\n"
+);
+
 // Production-safe Vite bridge: keep Vite and vite.config out of the production
 // module graph. They are loaded only when setupVite() is actually used.
 const productionSafeVite = `import express, { type Express } from "express";
