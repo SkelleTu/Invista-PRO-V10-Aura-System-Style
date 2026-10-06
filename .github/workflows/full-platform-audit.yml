@@ -78,7 +78,7 @@ jobs:
         run: |
           set -euo pipefail
           set +e
-          NODE_ENV=production INVISTA_PLATFORM=aura timeout 12s node dist/index.js > /tmp/aura-boot.log 2>&1
+          NODE_ENV=production INVISTA_PLATFORM=aura timeout --kill-after=3s 12s node dist/index.js > /tmp/aura-boot.log 2>&1
           rc=$?
           set -e
           cat /tmp/aura-boot.log
@@ -88,6 +88,10 @@ jobs:
           fi
           if [ "$rc" -eq 0 ]; then
             echo "Unexpected clean exit during boot contract."
+            exit 1
+          fi
+          if [ "$rc" -ne 124 ] && [ "$rc" -ne 137 ]; then
+            echo "Boot contract exited with an unexpected status: $rc"
             exit 1
           fi
           echo "Boot reached an application-level startup condition without module/runtime loading errors."
