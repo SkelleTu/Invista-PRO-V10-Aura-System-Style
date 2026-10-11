@@ -1,0 +1,59 @@
+name: Aura System - Build Artifact Audit
+
+on:
+  push:
+    branches:
+      - audit/aura-worker-artifact-and-ci
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aura-artifact-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  aura-build-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout Aura repository
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Validate pinned core source
+        shell: bash
+        run: |
+          test -s .invista-core-source
+          CORE_SHA="$(tr -d '[:space:]' < .invista-core-source)"
+          [[ "$CORE_SHA" =~ ^[0-9a-f]{40}$ ]]
+      - name: Install Aura dependencies
+        run: npm ci --include=dev
+      - name: TypeScript check
+        run: npm run check
+      - name: Build Aura and shared core
+        run: npm run build
+      - name: Verify server and worker artifacts
+        shell: bash
+        run: |
+          test -s dist/index.js
+          test -s dist/trading-user-worker.js
+          node --check dist/index.js
+          node --check dist/trading-user-worker.js
+      - name: Upload build artifacts for inspection
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aura-build-artifacts
+          path: |
+            dist/index.js
+            dist/trading-user-worker.js
+          if-no-files-found: error
+          retention-days: 7
