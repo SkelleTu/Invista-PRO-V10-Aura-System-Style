@@ -94,8 +94,8 @@ jobs:
       - name: Production build
         working-directory: /tmp/invista-source
         run: |
-          npm exec -- vite@5.4.19 build
-          npm exec -- esbuild@0.25.0 server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+          npm exec -- vite build
+          npm exec -- esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
 
       - name: Verify production artifact
         working-directory: /tmp/invista-source
