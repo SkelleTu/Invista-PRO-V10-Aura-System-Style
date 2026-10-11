@@ -47,8 +47,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          set -euo pipefail
+          CORE_SHA="$(tr -d '[:space:]' < "$GITHUB_WORKSPACE/.invista-core-source")"
+          test -n "$CORE_SHA"
           rm -rf /tmp/invista-source
           git clone --depth 1 https://github.com/SkelleTu/InvistaPro-V10.git /tmp/invista-source
+          git -C /tmp/invista-source fetch --depth 1 origin "$CORE_SHA"
+          git -C /tmp/invista-source checkout --detach FETCH_HEAD
           cp -a aura-assets aura-build.mjs /tmp/invista-source/
           cd /tmp/invista-source
           node aura-build.mjs
