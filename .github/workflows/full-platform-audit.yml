@@ -3,6 +3,8 @@ name: Aura System Style Full Platform Audit
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -46,7 +48,6 @@ jobs:
       - name: Prepare canonical source
         shell: bash
         run: |
-          set -euo pipefail
           set -euo pipefail
           CORE_SHA="$(tr -d '[:space:]' < "$GITHUB_WORKSPACE/.invista-core-source")"
           test -n "$CORE_SHA"
