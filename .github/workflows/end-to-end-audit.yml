@@ -1,0 +1,42 @@
+name: End-to-end platform audit
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: audit-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-and-build:
+    name: Aura source integration and production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Validate Aura lockfile dependencies
+        run: npm ci --include=dev
+      - name: Build Aura against its canonical Invista source
+        run: npm run build
+      - name: TypeScript check on integrated canonical source
+        run: npm --prefix /tmp/invista-source run check
+      - name: Verify production build artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d dist
+          test -f dist/index.js
+          test -s dist/index.js
+          echo "Aura production build artifacts verified."
