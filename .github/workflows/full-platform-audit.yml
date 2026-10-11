@@ -3,6 +3,8 @@ name: Aura System Style Full Platform Audit
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -36,9 +38,18 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          CORE_SHA="$(git ls-remote https://github.com/SkelleTu/InvistaPro-V10.git refs/heads/main | awk '{print $1}')"
+          MAIN_SHA="$(git ls-remote https://github.com/SkelleTu/InvistaPro-V10.git refs/heads/main | awk '{print $1}')"
+          CORE_SHA="$(tr -d '[:space:]' < .invista-core-source)"
+          test -n "$MAIN_SHA"
           test -n "$CORE_SHA"
-          test "$(tr -d '[:space:]' < .invista-core-source)" = "$CORE_SHA"
+          if [ "$GITHUB_EVENT_NAME" != "pull_request" ] && [ "$CORE_SHA" != "$MAIN_SHA" ]; then
+            echo "::error::Aura main must pin the current canonical Invista main SHA."
+            exit 1
+          fi
+          git init /tmp/core-reference-check
+          git -C /tmp/core-reference-check remote add origin https://github.com/SkelleTu/InvistaPro-V10.git
+          git -C /tmp/core-reference-check fetch --depth 1 origin "$CORE_SHA"
+          git -C /tmp/core-reference-check cat-file -e "$CORE_SHA^{commit}"
 
       - name: Clean dependency install
         run: npm ci
@@ -47,8 +58,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          CORE_SHA="$(tr -d '[:space:]' < "$GITHUB_WORKSPACE/.invista-core-source")"
+          test -n "$CORE_SHA"
           rm -rf /tmp/invista-source
           git clone --depth 1 https://github.com/SkelleTu/InvistaPro-V10.git /tmp/invista-source
+          git -C /tmp/invista-source fetch --depth 1 origin "$CORE_SHA"
+          git -C /tmp/invista-source checkout --detach FETCH_HEAD
           cp -a aura-assets aura-build.mjs /tmp/invista-source/
           cd /tmp/invista-source
           node aura-build.mjs
@@ -79,8 +94,8 @@ jobs:
       - name: Production build
         working-directory: /tmp/invista-source
         run: |
-          npm exec -- vite@5.4.19 build
-          npm exec -- esbuild@0.25.0 server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+          npm exec -- vite build
+          npm exec -- esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
 
       - name: Verify production artifact
         working-directory: /tmp/invista-source

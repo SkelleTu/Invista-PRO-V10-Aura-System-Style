@@ -3,6 +3,8 @@ name: Deriv Account Architecture Audit
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -16,10 +18,15 @@ jobs:
       - name: Checkout Aura
         uses: actions/checkout@v4
 
-      - name: Checkout canonical Invista core
+      - name: Read reviewed canonical core SHA
+        shell: bash
+        run: echo "INVISTA_CORE_SHA=$(tr -d '[:space:]' < .invista-core-source)" >> "$GITHUB_ENV"
+
+      - name: Checkout reviewed canonical Invista core
         uses: actions/checkout@v4
         with:
           repository: SkelleTu/InvistaPro-V10
+          ref: ${{ env.INVISTA_CORE_SHA }}
           path: invista-core
 
       - name: Validate Aura/Core Deriv architecture
