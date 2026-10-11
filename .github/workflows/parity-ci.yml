@@ -36,7 +36,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          set -euo pipefail
           CORE_SHA="$(tr -d '[:space:]' < "$GITHUB_WORKSPACE/.invista-core-source")"
           test -n "$CORE_SHA"
           rm -rf /tmp/invista-source
