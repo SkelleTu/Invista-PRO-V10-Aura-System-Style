@@ -38,9 +38,18 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          CORE_SHA="$(git ls-remote https://github.com/SkelleTu/InvistaPro-V10.git refs/heads/main | awk '{print $1}')"
+          MAIN_SHA="$(git ls-remote https://github.com/SkelleTu/InvistaPro-V10.git refs/heads/main | awk '{print $1}')"
+          CORE_SHA="$(tr -d '[:space:]' < .invista-core-source)"
+          test -n "$MAIN_SHA"
           test -n "$CORE_SHA"
-          test "$(tr -d '[:space:]' < .invista-core-source)" = "$CORE_SHA"
+          if [ "$GITHUB_EVENT_NAME" != "pull_request" ] && [ "$CORE_SHA" != "$MAIN_SHA" ]; then
+            echo "::error::Aura main must pin the current canonical Invista main SHA."
+            exit 1
+          fi
+          git init /tmp/core-reference-check
+          git -C /tmp/core-reference-check remote add origin https://github.com/SkelleTu/InvistaPro-V10.git
+          git -C /tmp/core-reference-check fetch --depth 1 origin "$CORE_SHA"
+          git -C /tmp/core-reference-check cat-file -e "$CORE_SHA^{commit}"
 
       - name: Clean dependency install
         run: npm ci
