@@ -1,47 +1,34 @@
-name: Sync Invista Core Reference
+name: Validate canonical Invista core reference
 
 on:
-  schedule:
-    - cron: "*/5 * * * *"
-  workflow_dispatch:
+  pull_request:
   push:
     branches: [main]
-    paths:
-      - "aura-assets/**"
-      - "aura-build.mjs"
-      - "package.json"
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  sync-core-reference:
+  validate-core-reference:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Checkout Aura System Style
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-      - name: Read canonical Invista core SHA
-        id: core
+      - name: Validate reviewed canonical core SHA
+        shell: bash
         run: |
-          CORE_SHA=$(git ls-remote https://github.com/SkelleTu/InvistaPro-V10.git refs/heads/main | awk '{print $1}')
+          set -euo pipefail
+          CORE_SHA="$(git ls-remote https://github.com/SkelleTu/InvistaPro-V10.git refs/heads/main | awk '{print $1}')"
+          MARKER="$(tr -d '[:space:]' < .invista-core-source)"
           test -n "$CORE_SHA"
-          echo "sha=$CORE_SHA" >> "$GITHUB_OUTPUT"
-      - name: Update canonical core marker
-        run: |
-          printf '%s\n' "${{ steps.core.outputs.sha }}" > .invista-core-source
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .invista-core-source
-          if git diff --cached --quiet; then
-            echo "Canonical core marker already current."
-            exit 0
+          if [ "$MARKER" != "$CORE_SHA" ]; then
+            echo "::error::Canonical Invista core changed. Update .invista-core-source through a reviewed change before building Aura."
+            echo "Recorded core: $MARKER"
+            echo "Current core:  $CORE_SHA"
+            exit 1
           fi
-          git commit -m "chore: sync canonical Invista core reference"
-          git push
-      - name: Verify functional source
-        run: |
           grep -q 'https://github.com/SkelleTu/InvistaPro-V10.git' package.json
           grep -q 'node aura-build.mjs' package.json
-          echo "OK: every Aura build pulls the latest InvistaPro-V10 main core."
+          echo "Canonical core reference is current and validated."
