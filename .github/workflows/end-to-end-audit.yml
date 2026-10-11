@@ -15,9 +15,9 @@ concurrency:
 
 jobs:
   static-and-build:
-    name: Aura source integration and production build
+    name: Aura source integration, policy tests and production build
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 40
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,11 +32,14 @@ jobs:
         run: npm run build
       - name: TypeScript check on integrated canonical source
         run: npm --prefix /tmp/invista-source run check
+      - name: Production symbol policy tests on canonical source
+        run: npm --prefix /tmp/invista-source test
+      - name: Audit integrated production dependencies
+        run: npm audit --prefix /tmp/invista-source --omit=dev --audit-level=high
       - name: Verify production build artifacts
         shell: bash
         run: |
           set -euo pipefail
           test -d dist
-          test -f dist/index.js
           test -s dist/index.js
           echo "Aura production build artifacts verified."
