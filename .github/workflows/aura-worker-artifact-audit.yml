@@ -36,10 +36,11 @@ jobs:
           [[ "$CORE_SHA" =~ ^[0-9a-f]{40}$ ]]
       - name: Install Aura dependencies
         run: npm ci --include=dev
-      - name: TypeScript check
-        run: npm run check
-      - name: Build Aura and shared core
+      - name: Build Aura and canonical shared core
         run: npm run build
+      - name: TypeScript check on canonical shared core
+        working-directory: /tmp/invista-source
+        run: npm run check
       - name: Verify server and worker artifacts
         shell: bash
         run: |
