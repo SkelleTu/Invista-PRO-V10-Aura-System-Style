@@ -20,15 +20,20 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          CORE_SHA="$(git ls-remote https://github.com/SkelleTu/InvistaPro-V10.git refs/heads/main | awk '{print $1}')"
+          MAIN_SHA="$(git ls-remote https://github.com/SkelleTu/InvistaPro-V10.git refs/heads/main | awk '{print $1}')"
           MARKER="$(tr -d '[:space:]' < .invista-core-source)"
-          test -n "$CORE_SHA"
-          if [ "$MARKER" != "$CORE_SHA" ]; then
-            echo "::error::Canonical Invista core changed. Update .invista-core-source through a reviewed change before building Aura."
+          test -n "$MAIN_SHA"
+          test -n "$MARKER"
+          if [ "$GITHUB_EVENT_NAME" != "pull_request" ] && [ "$MARKER" != "$MAIN_SHA" ]; then
+            echo "::error::Aura main must pin the current canonical Invista main SHA."
             echo "Recorded core: $MARKER"
-            echo "Current core:  $CORE_SHA"
+            echo "Current core:  $MAIN_SHA"
             exit 1
           fi
+          git init /tmp/core-reference-check
+          git -C /tmp/core-reference-check remote add origin https://github.com/SkelleTu/InvistaPro-V10.git
+          git -C /tmp/core-reference-check fetch --depth 1 origin "$MARKER"
+          git -C /tmp/core-reference-check cat-file -e "$MARKER^{commit}"
           grep -q 'https://github.com/SkelleTu/InvistaPro-V10.git' package.json
           grep -q 'node aura-build.mjs' package.json
           echo "Canonical core reference is current and validated."
