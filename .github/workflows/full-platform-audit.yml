@@ -14,6 +14,20 @@ jobs:
   full-platform-audit:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: audit
+          POSTGRES_PASSWORD: auditaudit
+          POSTGRES_DB: audit
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U audit -d audit"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
     steps:
       - name: Checkout Aura
         uses: actions/checkout@v4
@@ -112,10 +126,23 @@ jobs:
       - name: Production boot contract
         working-directory: /tmp/invista-source
         shell: bash
+        env:
+          NODE_ENV: production
+          INVISTA_PLATFORM: aura
+          DATABASE_URL: postgresql://audit:auditaudit@127.0.0.1:5432/audit
+          ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+          SESSION_SECRET: audit-only-session-secret-with-more-than-32-characters
+          DERIV_APP_ID: app12345
+          ADMIN_EMAIL: audit@example.invalid
+          SENDGRID_API_KEY: SG.audit-placeholder
+          HUGGINGFACE_API_KEY: hf_audit_placeholder
+          UNIVERSAL_SERVER_URL: https://example.invalid
+          INVISTA_UNIVERSAL_SERVER_KEY: audit-only-universal-key-32-chars
+          INTERNAL_DESKTOP_CTRL_SECRET: audit-only-internal-desktop-secret
         run: |
           set -euo pipefail
           set +e
-          NODE_ENV=production INVISTA_PLATFORM=aura timeout --kill-after=3s 12s node dist/index.js > /tmp/aura-boot.log 2>&1
+          timeout --kill-after=3s 20s node dist/index.js > /tmp/aura-boot.log 2>&1
           rc=$?
           set -e
           cat /tmp/aura-boot.log
