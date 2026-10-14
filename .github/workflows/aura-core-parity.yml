@@ -27,12 +27,17 @@ jobs:
           cache: npm
       - name: Install Aura wrapper dependencies
         run: npm ci
-      - name: TypeScript check
-        run: npm run check
+      # The Aura repository is a thin build wrapper; application TypeScript lives in the pinned V10 core.
+      # npm run build performs the authoritative TypeScript/build checks inside that source checkout.
       - name: Build Aura with pinned V10 core
         run: npm run build
-      - name: Verify bundled server and worker
+      - name: Verify pinned core and bundled artifacts
+        shell: bash
         run: |
+          set -euo pipefail
+          CORE_SHA="$(tr -d '[:space:]' < .invista-core-source)"
+          MAIN_SHA="$(git ls-remote https://github.com/SkelleTu/InvistaPro-V10.git refs/heads/main | awk '{print $1}')"
+          test -n "$CORE_SHA"
+          test "$CORE_SHA" = "$MAIN_SHA"
           test -s dist/index.js
           test -s dist/trading-user-worker.js
-          grep -q 'e0c9982045e2af8b40235ed6cba74f2ef76500e4' .invista-core-source
