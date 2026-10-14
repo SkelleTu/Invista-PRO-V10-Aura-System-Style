@@ -1,0 +1,38 @@
+name: Aura core parity build
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aura-core-parity-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout Aura wrapper
+        uses: actions/checkout@v4
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install Aura wrapper dependencies
+        run: npm ci
+      - name: TypeScript check
+        run: npm run check
+      - name: Build Aura with pinned V10 core
+        run: npm run build
+      - name: Verify bundled server and worker
+        run: |
+          test -s dist/index.js
+          test -s dist/trading-user-worker.js
+          grep -q 'e0c9982045e2af8b40235ed6cba74f2ef76500e4' .invista-core-source
